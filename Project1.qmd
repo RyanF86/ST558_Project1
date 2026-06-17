@@ -5,4 +5,103 @@ format: html
 editor: visual
 ---
 
-## Test
+```{r}
+#| include: false
+# load packages that may be used
+library(tidyverse)
+library(readxl)
+library(DBI)
+library(knitr)
+library(httr)
+library(jsonlite)
+library(psych)
+library(gt)
+library(tidycensus)
+```
+
+```{r}
+#| include: false
+APIKey <- "5a644b1ecc301cab1403e0940017740912735ef9" # R.Friedman API Key for census.gov
+```
+
+## Test Query of API
+
+To start, we'll do a test query of the API and review the format of the data
+
+```{r}
+TestData <- GET(paste0("https://api.census.gov/data/2022/acs/acs1/pums?get=SEX,PWGTP,AGEP&for=state:06&SCHL=24&key=", APIKey))
+```
+
+```{r}
+TestParsed <- fromJSON(rawToChar(TestData$content))
+head(TestParsed)
+```
+
+Looks like we get a matrix of all characters. Also the first row contains the variable names. We need to:
+
+1.  Set the names based on the first row
+
+2.  Delete the first row
+
+3.  Convert to tibble
+
+4.  Convert variables into numeric or factors
+
+```{r}
+TestCleaned <- TestParsed
+colnames(TestCleaned) <- TestCleaned[1, ] # set the column names from the first row
+TestCleaned <- as_tibble(TestCleaned[-1, ]) # delete first row and convert to tibble
+TestCleaned <- TestCleaned |>
+  mutate(SEX = factor(SEX), PWGTP = as.numeric(PWGTP), AGEP = as.numeric(AGEP), SCHL = factor(SCHL), state = factor(state)) # setting variables as numeric or factor
+head(TestCleaned)
+str(TestCleaned)
+```
+
+## Helper Function `IntoTibble()`
+
+`IntoTibble()` function is designed to take the census data returned from the `GET()` and convert into a tibble similar to the steps above
+
+```{r}
+IntoTibble <- function (CensusGet){ # input is the get() data from the census API
+  CensusParsed <- fromJSON(rawToChar(CensusGet$content)) # extracts the content from the API get
+  colnames(CensusParsed) <- CensusParsed[1, ] # sets variable names based on the first row
+  CensusParsed <- as_tibble(CensusParsed[-1, ]) # deletes first row and converts to tibble
+  CensusParsed
+}
+
+head(IntoTibble(TestData)) # testing against the above data
+```
+
+Test of `IntoTibble()` function is successful.
+
+## Single Year Query Function `QCensus()`
+
+`QCensus()` will query the API and allow user to specify:
+
+- Year of survey
+
+- Numeric variables (AGEP, GASP, GRPIP, JWAP, JWDP, JWMNP)
+
+  - AGEP and PWGTP are default
+
+  - PWGTP is always returned
+
+- Categorical variables (FER, HHL, SCH, SCHL, SEX)
+
+  - SEX is default
+
+- Geography level (region, division, state)
+
+- Optional geography subsetting within the API call
+
+```{r}
+QCensus <- function (year = 2022,
+                     numVars = "AGEP",
+                     catVars = "SEX", 
+                     geoRegion = "state",
+                     geoSubset = "06"){
+  
+}
+```
+
+## Multi-Year Query Function `QMultiCensus()`
