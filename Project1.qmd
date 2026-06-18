@@ -271,7 +271,11 @@ QCensus <- function (year = 2022,
   
   for (i in catVars){ # cycle through all relevant categorical variables in catVars
     QCensusParsed[[i]] <- factor(QCensusParsed[[i]]) # convert to factor
-  } # Consider setting labels for these if time allows.   
+  } 
+  
+  QCensusParsed[[geoLevel]] <- factor(QCensusParsed[[geoLevel]]) # convert appropriate geoLevel to a factor
+
+  # Consider setting factor labels for catVar and/or geoSubset levels if time allows. 
   
   return(QCensusParsed)
 }
@@ -280,19 +284,25 @@ QCensus <- function (year = 2022,
 Let's test some uses of QCensus()
 
 ```{r}
-QCensus()
+system.time(print(QCensus())) # running defaults
 ```
 
 ```{r}
-# test of function
-#system.time(head(QCensus(year = 2021, numVars = c("AGEP"), catVars = c("SCHL", "SEX"), geoLevel = "state", geoSubset = "01" )))
-#system.time(head(QCensus(year = 2021, numVars = c("JWAP"), catVars = c("SCHL", "SEX"), geoLevel = "state", geoSubset = "01" )))
-#system.time(head(QCensus(year = 2021, numVars = c("JWAP", "JWDP"), catVars = c("SCHL", "SEX"), geoLevel = "state", geoSubset = "01" )))
-
-#system.time(head(QCensus(year = 2021, numVars = c("JWAP", "JWDP"), catVars = c("SCHL", "SEX"), geoLevel = "state", geoSubset = "56" )))
-
-#system.time(head(QCensus(year = 2021, numVars = c("JWAP", "JWDP"), catVars = c("SCHL", "SEX"), geoLevel = "region", geoSubset = "1" )))
-
+system.time(print(QCensus(year = 2021, numVars = c("JWAP", "JWDP"), catVars = c("SCHL", "SEX"), geoLevel = "state", geoSubset = "17" ))) # adding some time and categorical variables
 ```
+
+```{r}
+system.time(print(QCensus(year = 2018, numVars = c("AGEP", "JWDP", "JWAP", "GRPIP"), catVars = c("FER"), geoLevel = "division", geoSubset = "4" ))) # trying a division and some other variables
+```
+
+```{r}
+# system.time(BigTest <- QCensus(year = 2015, numVars = c("PWGTP", "AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP"), catVars = c("FER", "HHL", "SCH", "SCHL", "SEX"), geoLevel = "state", geoSubset = "all"))
+
+# BigTest took ~6 minutes and returned ~3.1 million rows.  Compute time ("user") was 41 sec, so the code is not the bottleneck.  Not going to have this running in the .qmd, but it did work!
+```
+
+Runtime is manageable but increases with the size of the query (per geoLevel and geoSubset).  Majority of runtime is waiting on the API rather than compute, so code is reasonably optimized.  Be wary of setting geoSubset = "all" resulting in runtimes over 5 min. 
+
+All tests of `QCensus()` are successful.  
 
 ## Multi-Year Query Function `QMultiCensus()`
