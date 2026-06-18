@@ -96,10 +96,38 @@ Test of `IntoTibble()` function is successful.
 
 ```{r}
 QCensus <- function (year = 2022,
-                     numVars = "AGEP",
-                     catVars = "SEX", 
+                     numVars = c("AGEP"), 
+                     catVars = c("SEX"), 
                      geoRegion = "state",
-                     geoSubset = "06"){
+                     geoSubset = "56", # setting Wyoming as default state
+                     APIKey = "5a644b1ecc301cab1403e0940017740912735ef9") # using R.Friedman API key as default
+  { 
+  
+  ValidVars <- c("PWGTP", "AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP", 
+                 "FER", "HHL", "SCH", "SCHL", "SEX", 
+                 "region", "division", "state") # list of all valid variables for numVars, catVars, and geoRegion
+  
+  if (geoSubset == "all") {geoSubset = "*"} # converts entry of "all" into "*" 
+  
+  if (year == 2020 | year %% 1 != 0 | year > 2022 | year < 2010){ # check if year is valid integer between 2010 and 2022, excluding 2020
+    return("Invalid year.  Must be an integer from 2010 to 2022, excluding 2020")}
+  
+  # check variables
+  # check state
+ 
+  APIURL <- paste0("https://api.census.gov/data/", year, "/acs/acs1/pums?get=PWGTP,") # begins the URL including year and PWGTP
+  APIURL <- paste0(APIURL, paste(numVars, collapse = ","), ",", paste(catVars, collapse = ",")) # adds numeric variables and categorical variables
+  APIURL <- paste0(APIURL, "&for=", geoRegion, ":", geoSubset) # adds geo region and subset
+  APIURL <- paste0(APIURL, "&key=", APIKey) # adds API key
+  
+  
+  QCensusParsed <- IntoTibble(GET(APIURL))
+  
+  # check API return success?
+  # fix variable types
+  
+  return(QCensusParsed)
+  
   
 }
 ```
