@@ -37,7 +37,7 @@ TestParsed <- fromJSON(rawToChar(TestData$content))
 head(TestParsed)
 ```
 
-Looks like we get a matrix of all characters. Also the first row contains the variable names. We need to:
+Looks like we get a data frame of all characters. Also the first row contains the variable names. We need to:
 
 1.  Set the names based on the first row
 
@@ -56,6 +56,8 @@ TestCleaned <- TestCleaned |>
 head(TestCleaned)
 str(TestCleaned)
 ```
+
+Looks good.  We'll work on automating this process later.
 
 ## Helper Function `IntoTibble()`
 
@@ -96,10 +98,11 @@ If we split the string by both " " and ":", we'll get a vector of 7 predictable 
 
 7.  "a.m." or "p.m."
 
-Writing and testing the `StringToTime()` function:
+Testing the `StringToTime()` function
 
 ```{r}
 StringToTime <- function (string) {
+  if(string == "N/A (not a worker; worker who worked from home)") {return(NA)} # the string associated with code 0 will just return NA and skip the parsing
   vector <- unlist(strsplit(string, "[ :]")) # split the string by space and colon as described above, then unlist() resulting in a vector
   if(vector[1] == "12") {vector[1] <- "0"} # 12am counts as zero hours past midnight, so 12 should become 0
   if(vector[5] == "12") {vector[5] <- "0"} 
@@ -110,8 +113,12 @@ StringToTime <- function (string) {
   MeanTime <- mean(c(StartTime, EndTime)) # calculates the center of the range as the mean between start and end
   return(MeanTime) # returns middle of the range as minutes past midnight
 }
+```
 
-StringToTime("9:55 p.m. to 9:59 p.m.") # testing example strings
+Testing the `StringToTime()` function
+
+```{r}
+StringToTime("9:55 p.m. to 9:59 p.m.") 
 StringToTime("11:00 p.m. to 11:04 p.m.")
 StringToTime("4:10 a.m. to 4:14 a.m.")
 ```
@@ -136,10 +143,10 @@ JWAPTibble <- as_tibble(names(JWAP)) # begin with just the names of JWAP, which 
 JWAPTibble <- mutate(JWAPTibble, string = JWAP) # add a column of the string content
 JWAPTibble <- mutate(JWAPTibble, time = sapply(string, StringToTime)) # use StringToTime() to make the third column of time values
 JWAPTibble <- mutate(JWAPTibble, value = as.numeric(value)) # convert value to numeric
-head(JWAPTibble)
+JWAPTibble
 ```
 
-JWAPTibble is now ready to help us map JWAP codes to a proper time value.
+`JWAPTibble` is now ready to help us map JWAP codes to a proper time value.
 
 ## `JWDPTibble`
 
@@ -153,10 +160,10 @@ JWDPTibble <- as_tibble(names(JWDP)) # begin with just the names of JWDP, which 
 JWDPTibble <- mutate(JWDPTibble, string = JWDP) # add a column of the string content
 JWDPTibble <- mutate(JWDPTibble, time = sapply(string, StringToTime)) # use StringToTime() to make the third column of time values
 JWDPTibble <- mutate(JWDPTibble, value = as.numeric(value)) # convert value to numeric
-head(JWDPTibble)
+JWDPTibble
 ```
 
-JWDPTibble is now ready to help us map JWDP codes to a proper time value.
+`JWDPTibble` is now ready to help us map JWDP codes to a proper time value.
 
 ## Single Year Query Function `QCensus()`
 
@@ -180,7 +187,7 @@ JWDPTibble is now ready to help us map JWDP codes to a proper time value.
 
 ```{r}
 QCensus <- function (year = 2022,
-                     numVars = c("AGEP"), 
+                     numVars = c("AGEP"), # default numV
                      catVars = c("SEX"), 
                      geoLevel = "state",
                      geoSubset = "56", # setting Wyoming as default state
@@ -275,13 +282,13 @@ QCensus <- function (year = 2022,
   
   QCensusParsed[[geoLevel]] <- factor(QCensusParsed[[geoLevel]]) # convert appropriate geoLevel to a factor
 
-  # Consider setting factor labels for catVar and/or geoSubset levels if time allows. 
+  # Consider setting factor labels for catVars and/or geoSubset levels if time allows. 
   
   return(QCensusParsed)
 }
 ```
 
-Let's test some uses of QCensus()
+Let's test some uses of `QCensus()`
 
 ```{r}
 system.time(print(QCensus())) # running defaults
@@ -306,3 +313,54 @@ Runtime is manageable but increases with the size of the query (per geoLevel and
 All tests of `QCensus()` are successful.  
 
 ## Multi-Year Query Function `QMultiCensus()`
+
+`QMultiCensus()` will build on `QCensus()` to query multiple years of data.
+
+The user will specify a valid range of years (in addition to the other `QCensus()` inputs), and `QMultiCensus()` will return a single tibble with combined data and a new year variable
+
+```{r}
+QMultiCensus <- function(CensusYears = c(2010:2011), # 
+                         numVars = c("AGEP"), 
+                         catVars = c("SEX"), 
+                         geoLevel = "state", 
+                         geoSubset = "56", # setting Wyoming as default state
+                         APIKey = "5a644b1ecc301cab1403e0940017740912735ef9") {# using R.Friedman API key as default)
+  
+  for(i in CensusYears) {
+    if(i %% 1 != 0 | i > 2022 | i < 2010){ # confirms all CensusYears are within the valid range
+      stop("Invalid range of years.  Range must be within 2010 to 2022.  2020 is skipped.")}
+  }
+  CensusYears <- CensusYears[CensusYears != 2020] # removes 2020 from CensusYears, if present
+  CensusYears <- unique(CensusYears) # removes any duplicates, if present
+  
+  QMultiParsed = NULL # need to start with placeholder here in order for bind_rows to work initally
+  
+  for(i in CensusYears) { # loop through all census years we want
+    QMultiParsed <- QCensus(i, numVars, catVars, geoLevel, geoSubset, APIKey) |> # call QCensus() on the specific year and variables desired
+      mutate(year = i) |> # add a year column 
+      bind_rows(QMultiParsed) # attach resulting tibble to existing tibble (building longer each time)
+  }
+  
+  QMultiParsed <- arrange(QMultiParsed, year) # arranges results in lowest to highest year
+  
+  return(QMultiParsed)
+}
+```
+
+Test `QMultiCensus()`
+
+```{r}
+system.time(RunTest <- QMultiCensus(CensusYears = c(2018:2021))) # default variables.  testing exclusion of year 2020
+str(RunTest) # check structure
+unique(RunTest$year) # verify years present in result
+remove(RunTest) # delete temp variable
+```
+
+```{r}
+system.time(RunTest <- QMultiCensus(CensusYears = c(2010:2022), numVars = c("JWAP", "JWDP"), catVars = c("SCHL", "SEX"), geoLevel = "state", geoSubset = "02" )) # Alaska data from 2010 to 2022
+str(RunTest) # check structure
+unique(RunTest$year) # verify years present in result
+remove(RunTest) # delete temp variable
+```
+
+All tests of `QMultiCensus()` are successful.
