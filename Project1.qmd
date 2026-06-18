@@ -98,28 +98,71 @@ Test of `IntoTibble()` function is successful.
 QCensus <- function (year = 2022,
                      numVars = c("AGEP"), 
                      catVars = c("SEX"), 
-                     geoRegion = "state",
+                     geoLevel = "state",
                      geoSubset = "56", # setting Wyoming as default state
                      APIKey = "5a644b1ecc301cab1403e0940017740912735ef9") # using R.Friedman API key as default
   { 
   
-  ValidVars <- c("PWGTP", "AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP", 
-                 "FER", "HHL", "SCH", "SCHL", "SEX", 
-                 "region", "division", "state") # list of all valid variables for numVars, catVars, and geoRegion
-  
   if (geoSubset == "all") {geoSubset = "*"} # converts entry of "all" into "*" 
   
+  if (!is.numeric(year)){stop("Year must be a number")} # first checks if year is a number
   if (year == 2020 | year %% 1 != 0 | year > 2022 | year < 2010){ # check if year is valid integer between 2010 and 2022, excluding 2020
-    return("Invalid year.  Must be an integer from 2010 to 2022, excluding 2020")}
+    stop("Invalid year.  Must be an integer from 2010 to 2022, excluding 2020")}
   
-  # check variables
-  # check state
- 
+  ValidNumVars <- c("PWGTP", "AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP") # list of all valid variables for numVars
+  ValidCatVars <- c("FER", "HHL", "SCH", "SCHL", "SEX") # list of all valid variables for catVars
+  ValidLevelVars <- c("region", "division", "state") # list of all valid variables for geoLevel
+  
+  if (!all(numVars %in% ValidNumVars)) { # confirm numeric variables are valid
+    stop("Invalid numeric variable(s).  Valid numeric variables are: PWGTP, AGEP, GASP, GRPIP, JWAP, JWDP, JWMNP.")}  
+  if (!all(catVars %in% ValidCatVars)) { # confirm categorical variables are valid
+    stop("Invalid categorical variable(s).  Valid categorical variables are: FER, HHL, SCH, SCHL, SEX.")}    
+  if (!all(geoLevel %in% ValidLevelVars)) { # confirm geography level variables are valid
+    stop("Invalid geography level variable(s).  Valid geography levels are: region, division, state.")}    
+  
+  if (length(unique(numVars)) != length(numVars)) { # checking for duplicated numeric variables
+    stop("Error: Duplicated numeric variable")}
+  if (length(unique(catVars)) != length(catVars))  { # checking for duplicated categorical variables
+    stop("Error: Duplicated categorical variable")}
+  
+  numVars <- numVars[numVars != "PWGTP"] # pulling out PWGTP from numVars since that variable is always included anyways
+  
+  if(length(numVars) < 1 ) { # checks minimum input requirement for numVars
+    stop("Must specify at least one numeric variable other than PWGTP")}  
+  if(length(catVars) < 1 ) { # checks minimum input requirement for catVars
+    stop("Must specify at least one categorical variable")} 
+  
+  # establish the valid codes for regions, divisions, and states
+  ValidRegions <- c("1", "2", "3", "4", "*")
+  ValidDivisions <- c("1", "2", "3", "4", "5", "6", "7", "8", "9", "*")
+  ValidStates <- c("01", "02", "04", "05", "06", "08", "09", "10", "11", "12", "13", "15", "16", "17", "18", "19", "20", 
+                   "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", 
+                   "38", "39", "40", "41", "42", "44", "45", "46", "47", "48", "49", "50", "51", "53", "54", "55", "56", "*")
+  
+  # add corresponding names (to be used later).  "All" is simply a placeholder that will not be used
+  names(ValidDivisions) <- c("New England", "Middle Atlantic", "East North Central", "West North Central", 
+                             "South Atlantic", "East South Central", "West South Central", "Mountain", "Pacific", "All")
+  names(ValidRegions) <- c("Northeast", "Midwest", "South", "West", "All")
+  names(ValidStates) <- c("Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", 
+                          "District of Columbia", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", 
+                          "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", 
+                          "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", 
+                          "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", 
+                          "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", 
+                          "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming", "All")
+  
+  if (geoLevel == "region" & !(geoSubset %in% ValidRegions)) { # check if geoSubset matches valid regions
+    stop("Invalid region code")} 
+  if (geoLevel == "division" & !(geoSubset %in% ValidDivisions)) { # check if geoSubset matches valid divisions
+    stop("Invalid division code")} 
+  if (geoLevel == "state" & !(geoSubset %in% ValidStates)) { # check if geoSubset matches valid states
+    stop("Invalid state code")} 
+  
+  
   APIURL <- paste0("https://api.census.gov/data/", year, "/acs/acs1/pums?get=PWGTP,") # begins the URL including year and PWGTP
   APIURL <- paste0(APIURL, paste(numVars, collapse = ","), ",", paste(catVars, collapse = ",")) # adds numeric variables and categorical variables
-  APIURL <- paste0(APIURL, "&for=", geoRegion, ":", geoSubset) # adds geo region and subset
+  APIURL <- paste0(APIURL, "&for=", geoLevel, ":", geoSubset) # adds geoLevel and subset
   APIURL <- paste0(APIURL, "&key=", APIKey) # adds API key
-  
   
   QCensusParsed <- IntoTibble(GET(APIURL))
   
