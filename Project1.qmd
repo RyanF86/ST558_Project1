@@ -118,9 +118,9 @@ StringToTime("4:10 a.m. to 4:14 a.m.")
 
 Test of `StringToTime()` is successful.
 
-## JWAP Time Conversion Function `JWAPConvert()`
+## `JWAPTibble`
 
-JWAP is a numeric variable that maps onto an irregular range of times. `JWAPConvert()` will take the JWAP numeric as input and return the middle value of the time range as minutes past midnight (i.e. 1:15am would be 75 minutes past midnight)
+JWAP is a numeric code that maps onto an irregular range of times. We will create `JWAPTibble` to correlate the time code to the middle value of the time range as minutes past midnight (i.e. 1:15am would be 75 minutes past midnight)
 
 ```{r}
 JWAP <- fromJSON("Project1DataFiles/JWAP.json") # this JWAP descriptor is from https://api.census.gov/data/2022/acs/acs1/pums/variables/JWAP.json
@@ -135,32 +135,15 @@ Now we have a named vector of 286 character strings. The names are per the vario
 JWAPTibble <- as_tibble(names(JWAP)) # begin with just the names of JWAP, which are the codes
 JWAPTibble <- mutate(JWAPTibble, string = JWAP) # add a column of the string content
 JWAPTibble <- mutate(JWAPTibble, time = sapply(string, StringToTime)) # use StringToTime() to make the third column of time values
+JWAPTibble <- mutate(JWAPTibble, value = as.numeric(value)) # convert value to numeric
 head(JWAPTibble)
 ```
 
 JWAPTibble is now ready to help us map JWAP codes to a proper time value.
 
-Let's write and test `JWAPConvert()`
+## `JWDPTibble`
 
-```{r}
-JWAPConvert <- function(TimeCode) {
-  TimeCode <- sprintf("%03d", as.numeric(TimeCode)) # ensures TimeCode has leading zeros and 3 digits to match the tibble above 
-  TimeMinutes <- as.numeric(filter(JWAPTibble, value == TimeCode)$time) # looks at the row matching TimeCode, then extracts the corresponding time, then converts to numeric
-  if (TimeCode == "000") {TimeMinutes <- NA} # assigns NA explicitly 
-  return(TimeMinutes)
-}
-
-JWAPConvert("258")
-JWAPConvert("048")
-JWAPConvert("48")
-JWAPConvert("0")
-
-```
-Test of `JWAPConvert()` is successful, including returning NA for "0"
-
-## JWDP Time Conversion Function `JWDPConvert()`
-
-Unfortunately JWDP has different time codes and ranges than JWAP, so the above process will need to be repeated to create `JWDPConvert()`
+Unfortunately JWDP has different time codes and ranges than JWAP, so the above process will need to be repeated to create `JWDPTibble`
 
 ```{r}
 JWDP <- fromJSON("Project1DataFiles/JWDP.json") # this JWDP descriptor is from https://api.census.gov/data/2022/acs/acs1/pums/variables/JWDP.json
@@ -169,28 +152,11 @@ JWDP <- unlist(JWDP$values$item) # gets to the useful content of the file
 JWDPTibble <- as_tibble(names(JWDP)) # begin with just the names of JWDP, which are the codes
 JWDPTibble <- mutate(JWDPTibble, string = JWDP) # add a column of the string content
 JWDPTibble <- mutate(JWDPTibble, time = sapply(string, StringToTime)) # use StringToTime() to make the third column of time values
+JWDPTibble <- mutate(JWDPTibble, value = as.numeric(value)) # convert value to numeric
 head(JWDPTibble)
 ```
 
 JWDPTibble is now ready to help us map JWDP codes to a proper time value.
-
-Let's write and test `JWDPConvert()`
-
-```{r}
-JWDPConvert <- function(TimeCode) {
-  TimeCode <- sprintf("%03d", as.numeric(TimeCode)) # ensures TimeCode has leading zeros and 3 digits to match the tibble above 
-  TimeMinutes <- as.numeric(filter(JWDPTibble, value == TimeCode)$time) # looks at the row matching TimeCode, then extracts the corresponding time, then converts to numeric
-  if (TimeCode == "000") {TimeMinutes <- NA} # assigns NA explicitly 
-  return(TimeMinutes)
-}
-
-JWDPConvert("014")
-JWDPConvert("046")
-JWDPConvert("46")
-JWDPConvert("0")
-
-```
-Test of `JWDPConvert()` is successful, including returning NA for "0"
 
 ## Single Year Query Function `QCensus()`
 
@@ -283,23 +249,50 @@ QCensus <- function (year = 2022,
   
   QCensusParsed <- IntoTibble(GET(APIURL)) # Gets tibble from URL
   
-  for (i in c("PWGTP", numVars)){ # cycle through all relevant numeric variables, adding PWGTP back in
+  for (i in c("PWGTP", numVars)) { # cycle through all relevant numeric variables, adding PWGTP back in
     if (i %in% c("PWGTP", "AGEP", "GASP", "GRPIP", "JWMNP")) { # these variables are pure numbers
       QCensusParsed[[i]] <- as.numeric(QCensusParsed[[i]]) # convert to numeric
     }
-    if (i == "JWAP") {
-      QCensusParsed[[i]] <- as.numeric(sapply(QCensusParsed[[i]], JWAPConvert)) # use JWAPConvert() on JWAP variable
+    if (i == "JWAP") { # converting JWAP times
+      QCensusParsed <- QCensusParsed |>
+        mutate(JWAP = as.numeric(JWAP)) |> # convert JWAP to numeric to match JWAPTibble
+        left_join(JWAPTibble, by = c("JWAP" = "value")) |> # join with JWAPTibble, keeping the original QCensusParsed and correlating the codes
+        mutate(JWAP = time) |> # we can now overwrite JWAP in QCensusParsed with the proper time values
+        select(!c(string, time)) # remove unused string and time variables
     }
-    if (i == "JWDP") {
-      QCensusParsed[[i]] <- as.numeric(sapply(QCensusParsed[[i]], JWDPConvert)) # use JWDPConvert() on JWDP variable
+    if (i == "JWDP") { #converting JWDP times, same as above
+      QCensusParsed <- QCensusParsed |>
+        mutate(JWDP = as.numeric(JWDP)) |>
+        left_join(JWDPTibble, by = c("JWDP" = "value")) |>
+        mutate(JWDP = time) |>
+        select(!c(string, time))      
     }   
   }
   
-  # fix categorical variable types
+  for (i in catVars){ # cycle through all relevant categorical variables in catVars
+    QCensusParsed[[i]] <- factor(QCensusParsed[[i]]) # convert to factor
+  } # Consider setting labels for these if time allows.   
   
   return(QCensusParsed)
-  
 }
+```
+
+Let's test some uses of QCensus()
+
+```{r}
+QCensus()
+```
+
+```{r}
+# test of function
+#system.time(head(QCensus(year = 2021, numVars = c("AGEP"), catVars = c("SCHL", "SEX"), geoLevel = "state", geoSubset = "01" )))
+#system.time(head(QCensus(year = 2021, numVars = c("JWAP"), catVars = c("SCHL", "SEX"), geoLevel = "state", geoSubset = "01" )))
+#system.time(head(QCensus(year = 2021, numVars = c("JWAP", "JWDP"), catVars = c("SCHL", "SEX"), geoLevel = "state", geoSubset = "01" )))
+
+#system.time(head(QCensus(year = 2021, numVars = c("JWAP", "JWDP"), catVars = c("SCHL", "SEX"), geoLevel = "state", geoSubset = "56" )))
+
+#system.time(head(QCensus(year = 2021, numVars = c("JWAP", "JWDP"), catVars = c("SCHL", "SEX"), geoLevel = "region", geoSubset = "1" )))
+
 ```
 
 ## Multi-Year Query Function `QMultiCensus()`

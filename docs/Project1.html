@@ -24,6 +24,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -110,8 +145,362 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="test" class="level2">
-<h2 class="anchored" data-anchor-id="test">Test</h2>
+<section id="test-query-of-api" class="level2">
+<h2 class="anchored" data-anchor-id="test-query-of-api">Test Query of API</h2>
+<p>To start, we’ll do a test query of the API and review the format of the data</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>TestData <span class="ot">&lt;-</span> <span class="fu">GET</span>(<span class="fu">paste0</span>(<span class="st">"https://api.census.gov/data/2022/acs/acs1/pums?get=SEX,PWGTP,AGEP&amp;for=state:06&amp;SCHL=24&amp;key="</span>, APIKey))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>TestParsed <span class="ot">&lt;-</span> <span class="fu">fromJSON</span>(<span class="fu">rawToChar</span>(TestData<span class="sc">$</span>content))</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(TestParsed)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     [,1]  [,2]    [,3]   [,4]   [,5]   
+[1,] "SEX" "PWGTP" "AGEP" "SCHL" "state"
+[2,] "2"   "30"    "53"   "24"   "06"   
+[3,] "1"   "55"    "64"   "24"   "06"   
+[4,] "1"   "56"    "57"   "24"   "06"   
+[5,] "2"   "87"    "46"   "24"   "06"   
+[6,] "1"   "98"    "58"   "24"   "06"   </code></pre>
+</div>
+</div>
+<p>Looks like we get a matrix of all characters. Also the first row contains the variable names. We need to:</p>
+<ol type="1">
+<li><p>Set the names based on the first row</p></li>
+<li><p>Delete the first row</p></li>
+<li><p>Convert to tibble</p></li>
+<li><p>Convert variables into numeric or factors</p></li>
+</ol>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>TestCleaned <span class="ot">&lt;-</span> TestParsed</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(TestCleaned) <span class="ot">&lt;-</span> TestCleaned[<span class="dv">1</span>, ] <span class="co"># set the column names from the first row</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>TestCleaned <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(TestCleaned[<span class="sc">-</span><span class="dv">1</span>, ]) <span class="co"># delete first row and convert to tibble</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>TestCleaned <span class="ot">&lt;-</span> TestCleaned <span class="sc">|&gt;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">SEX =</span> <span class="fu">factor</span>(SEX), <span class="at">PWGTP =</span> <span class="fu">as.numeric</span>(PWGTP), <span class="at">AGEP =</span> <span class="fu">as.numeric</span>(AGEP), <span class="at">SCHL =</span> <span class="fu">factor</span>(SCHL), <span class="at">state =</span> <span class="fu">factor</span>(state)) <span class="co"># setting variables as numeric or factor</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(TestCleaned)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 5
+  SEX   PWGTP  AGEP SCHL  state
+  &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;fct&gt; &lt;fct&gt;
+1 2        30    53 24    06   
+2 1        55    64 24    06   
+3 1        56    57 24    06   
+4 2        87    46 24    06   
+5 1        98    58 24    06   
+6 2        35    88 24    06   </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(TestCleaned)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>tibble [6,336 × 5] (S3: tbl_df/tbl/data.frame)
+ $ SEX  : Factor w/ 2 levels "1","2": 2 1 1 2 1 2 1 1 2 2 ...
+ $ PWGTP: num [1:6336] 30 55 56 87 98 35 94 162 129 65 ...
+ $ AGEP : num [1:6336] 53 64 57 46 58 88 56 60 38 34 ...
+ $ SCHL : Factor w/ 1 level "24": 1 1 1 1 1 1 1 1 1 1 ...
+ $ state: Factor w/ 1 level "06": 1 1 1 1 1 1 1 1 1 1 ...</code></pre>
+</div>
+</div>
+</section>
+<section id="helper-function-intotibble" class="level2">
+<h2 class="anchored" data-anchor-id="helper-function-intotibble">Helper Function <code>IntoTibble()</code></h2>
+<p><code>IntoTibble()</code> function is designed to take the census data returned from the <code>GET()</code> and convert into a tibble similar to the steps above</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>IntoTibble <span class="ot">&lt;-</span> <span class="cf">function</span> (CensusGet){ <span class="co"># input is the get() data from the census API</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  CensusParsed <span class="ot">&lt;-</span> <span class="fu">fromJSON</span>(<span class="fu">rawToChar</span>(CensusGet<span class="sc">$</span>content)) <span class="co"># extracts the content from the API get</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">colnames</span>(CensusParsed) <span class="ot">&lt;-</span> CensusParsed[<span class="dv">1</span>, ] <span class="co"># sets variable names based on the first row</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  CensusParsed <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(CensusParsed[<span class="sc">-</span><span class="dv">1</span>, ]) <span class="co"># deletes first row and converts to tibble</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  CensusParsed</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">IntoTibble</span>(TestData)) <span class="co"># testing against the above data</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 5
+  SEX   PWGTP AGEP  SCHL  state
+  &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;
+1 2     30    53    24    06   
+2 1     55    64    24    06   
+3 1     56    57    24    06   
+4 2     87    46    24    06   
+5 1     98    58    24    06   
+6 2     35    88    24    06   </code></pre>
+</div>
+</div>
+<p>Test of <code>IntoTibble()</code> function is successful.</p>
+</section>
+<section id="time-range-string-conversion-function-stringtotime" class="level2">
+<h2 class="anchored" data-anchor-id="time-range-string-conversion-function-stringtotime">Time Range String Conversion Function <code>StringToTime()</code></h2>
+<p>JWAP and JWDP both associate time codes with character strings representing a time range. <code>StringToTime()</code> will convert the character string into the middle value of the time range as minutes past midnight (i.e.&nbsp;1:15am would be 75 minutes past midnight)</p>
+<p>Example character strings: “9:55 p.m. to 9:59 p.m.” “11:00 p.m. to 11:04 p.m.” “4:10 a.m. to 4:14 a.m.”</p>
+<p>If we split the string by both ” ” and “:”, we’ll get a vector of 7 predictable elements:</p>
+<ol type="1">
+<li><p>Hours for start time</p></li>
+<li><p>Minutes for start time</p></li>
+<li><p>“a.m.” or “p.m.”</p></li>
+<li><p>“to” (not used)</p></li>
+<li><p>Hours for end time</p></li>
+<li><p>Minutes for end time</p></li>
+<li><p>“a.m.” or “p.m.”</p></li>
+</ol>
+<p>Writing and testing the <code>StringToTime()</code> function:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>StringToTime <span class="ot">&lt;-</span> <span class="cf">function</span> (string) {</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  vector <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">strsplit</span>(string, <span class="st">"[ :]"</span>)) <span class="co"># split the string by space and colon as described above, then unlist() resulting in a vector</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(vector[<span class="dv">1</span>] <span class="sc">==</span> <span class="st">"12"</span>) {vector[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="st">"0"</span>} <span class="co"># 12am counts as zero hours past midnight, so 12 should become 0</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(vector[<span class="dv">5</span>] <span class="sc">==</span> <span class="st">"12"</span>) {vector[<span class="dv">5</span>] <span class="ot">&lt;-</span> <span class="st">"0"</span>} </span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  StartTime <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(vector[<span class="dv">1</span>]) <span class="sc">*</span> <span class="dv">60</span> <span class="sc">+</span> <span class="fu">as.numeric</span>(vector[<span class="dv">2</span>]) <span class="co"># calculates time as hours * 60 + minutes</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(vector[<span class="dv">3</span>] <span class="sc">==</span> <span class="st">"p.m."</span>) {StartTime <span class="ot">&lt;-</span> StartTime <span class="sc">+</span> <span class="dv">12</span> <span class="sc">*</span> <span class="dv">60</span>} <span class="co"># adds 12*60 minutes if p.m.</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  EndTime <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(vector[<span class="dv">5</span>]) <span class="sc">*</span> <span class="dv">60</span> <span class="sc">+</span> <span class="fu">as.numeric</span>(vector[<span class="dv">6</span>])</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(vector[<span class="dv">7</span>] <span class="sc">==</span> <span class="st">"p.m."</span>) {EndTime <span class="ot">&lt;-</span> EndTime <span class="sc">+</span> <span class="dv">12</span> <span class="sc">*</span> <span class="dv">60</span>}</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  MeanTime <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">c</span>(StartTime, EndTime)) <span class="co"># calculates the center of the range as the mean between start and end</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(MeanTime) <span class="co"># returns middle of the range as minutes past midnight</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="fu">StringToTime</span>(<span class="st">"9:55 p.m. to 9:59 p.m."</span>) <span class="co"># testing example strings</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1317</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">StringToTime</span>(<span class="st">"11:00 p.m. to 11:04 p.m."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1382</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">StringToTime</span>(<span class="st">"4:10 a.m. to 4:14 a.m."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 252</code></pre>
+</div>
+</div>
+<p>Test of <code>StringToTime()</code> is successful.</p>
+</section>
+<section id="jwaptibble" class="level2">
+<h2 class="anchored" data-anchor-id="jwaptibble"><code>JWAPTibble</code></h2>
+<p>JWAP is a numeric code that maps onto an irregular range of times. We will create <code>JWAPTibble</code> to correlate the time code to the middle value of the time range as minutes past midnight (i.e.&nbsp;1:15am would be 75 minutes past midnight)</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>JWAP <span class="ot">&lt;-</span> <span class="fu">fromJSON</span>(<span class="st">"Project1DataFiles/JWAP.json"</span>) <span class="co"># this JWAP descriptor is from https://api.census.gov/data/2022/acs/acs1/pums/variables/JWAP.json</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>JWAP <span class="ot">&lt;-</span> <span class="fu">unlist</span>(JWAP<span class="sc">$</span>values<span class="sc">$</span>item) <span class="co"># gets to the useful content of the file</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> Named chr [1:286] "9:40 p.m. to 9:44 p.m." "9:50 p.m. to 9:54 p.m." ...
+ - attr(*, "names")= chr [1:286] "258" "260" "261" "274" ...</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                       258                        260 
+  "9:40 p.m. to 9:44 p.m."   "9:50 p.m. to 9:54 p.m." 
+                       261                        274 
+  "9:55 p.m. to 9:59 p.m." "11:00 p.m. to 11:04 p.m." 
+                       048                        058 
+  "4:10 a.m. to 4:14 a.m."   "5:00 a.m. to 5:04 a.m." </code></pre>
+</div>
+</div>
+<p>Now we have a named vector of 286 character strings. The names are per the various JWAP codes. The strings are the descriptions of the time interval. Lets convert into a tibble and apply <code>StringToTime()</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>JWAPTibble <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(<span class="fu">names</span>(JWAP)) <span class="co"># begin with just the names of JWAP, which are the codes</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>JWAPTibble <span class="ot">&lt;-</span> <span class="fu">mutate</span>(JWAPTibble, <span class="at">string =</span> JWAP) <span class="co"># add a column of the string content</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>JWAPTibble <span class="ot">&lt;-</span> <span class="fu">mutate</span>(JWAPTibble, <span class="at">time =</span> <span class="fu">sapply</span>(string, StringToTime)) <span class="co"># use StringToTime() to make the third column of time values</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: There were 4 warnings in `mutate()`.
+The first warning was:
+ℹ In argument: `time = sapply(string, StringToTime)`.
+Caused by warning in `FUN()`:
+! NAs introduced by coercion
+ℹ Run `dplyr::last_dplyr_warnings()` to see the 3 remaining warnings.</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>JWAPTibble <span class="ot">&lt;-</span> <span class="fu">mutate</span>(JWAPTibble, <span class="at">value =</span> <span class="fu">as.numeric</span>(value)) <span class="co"># convert value to numeric</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(JWAPTibble)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 3
+  value string                    time
+  &lt;dbl&gt; &lt;chr&gt;                    &lt;dbl&gt;
+1   258 9:40 p.m. to 9:44 p.m.    1302
+2   260 9:50 p.m. to 9:54 p.m.    1312
+3   261 9:55 p.m. to 9:59 p.m.    1317
+4   274 11:00 p.m. to 11:04 p.m.  1382
+5    48 4:10 a.m. to 4:14 a.m.     252
+6    58 5:00 a.m. to 5:04 a.m.     302</code></pre>
+</div>
+</div>
+<p>JWAPTibble is now ready to help us map JWAP codes to a proper time value.</p>
+</section>
+<section id="jwdptibble" class="level2">
+<h2 class="anchored" data-anchor-id="jwdptibble"><code>JWDPTibble</code></h2>
+<p>Unfortunately JWDP has different time codes and ranges than JWAP, so the above process will need to be repeated to create <code>JWDPTibble</code></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>JWDP <span class="ot">&lt;-</span> <span class="fu">fromJSON</span>(<span class="st">"Project1DataFiles/JWDP.json"</span>) <span class="co"># this JWDP descriptor is from https://api.census.gov/data/2022/acs/acs1/pums/variables/JWDP.json</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>JWDP <span class="ot">&lt;-</span> <span class="fu">unlist</span>(JWDP<span class="sc">$</span>values<span class="sc">$</span>item) <span class="co"># gets to the useful content of the file</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>JWDPTibble <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(<span class="fu">names</span>(JWDP)) <span class="co"># begin with just the names of JWDP, which are the codes</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>JWDPTibble <span class="ot">&lt;-</span> <span class="fu">mutate</span>(JWDPTibble, <span class="at">string =</span> JWDP) <span class="co"># add a column of the string content</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>JWDPTibble <span class="ot">&lt;-</span> <span class="fu">mutate</span>(JWDPTibble, <span class="at">time =</span> <span class="fu">sapply</span>(string, StringToTime)) <span class="co"># use StringToTime() to make the third column of time values</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: There were 4 warnings in `mutate()`.
+The first warning was:
+ℹ In argument: `time = sapply(string, StringToTime)`.
+Caused by warning in `FUN()`:
+! NAs introduced by coercion
+ℹ Run `dplyr::last_dplyr_warnings()` to see the 3 remaining warnings.</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>JWDPTibble <span class="ot">&lt;-</span> <span class="fu">mutate</span>(JWDPTibble, <span class="at">value =</span> <span class="fu">as.numeric</span>(value)) <span class="co"># convert value to numeric</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(JWDPTibble)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 3
+  value string                  time
+  &lt;dbl&gt; &lt;chr&gt;                  &lt;dbl&gt;
+1    14 4:10 a.m. to 4:19 a.m.  254.
+2    15 4:20 a.m. to 4:29 a.m.  264.
+3    17 4:40 a.m. to 4:49 a.m.  284.
+4    22 5:15 a.m. to 5:19 a.m.  317 
+5    35 6:20 a.m. to 6:24 a.m.  382 
+6    46 7:15 a.m. to 7:19 a.m.  437 </code></pre>
+</div>
+</div>
+<p>JWDPTibble is now ready to help us map JWDP codes to a proper time value.</p>
+</section>
+<section id="single-year-query-function-qcensus" class="level2">
+<h2 class="anchored" data-anchor-id="single-year-query-function-qcensus">Single Year Query Function <code>QCensus()</code></h2>
+<p><code>QCensus()</code> will query the API and allow user to specify:</p>
+<ul>
+<li><p>Year of survey</p></li>
+<li><p>Numeric variables (AGEP, GASP, GRPIP, JWAP, JWDP, JWMNP)</p>
+<ul>
+<li><p>AGEP and PWGTP are default</p></li>
+<li><p>PWGTP is always returned</p></li>
+</ul></li>
+<li><p>Categorical variables (FER, HHL, SCH, SCHL, SEX)</p>
+<ul>
+<li>SEX is default</li>
+</ul></li>
+<li><p>Geography level (region, division, state)</p></li>
+<li><p>Optional geography subsetting within the API call</p></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>QCensus <span class="ot">&lt;-</span> <span class="cf">function</span> (<span class="at">year =</span> <span class="dv">2022</span>,</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>                     <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>), </span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>                     <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"SEX"</span>), </span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>                     <span class="at">geoLevel =</span> <span class="st">"state"</span>,</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">geoSubset =</span> <span class="st">"56"</span>, <span class="co"># setting Wyoming as default state</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">APIKey =</span> <span class="st">"5a644b1ecc301cab1403e0940017740912735ef9"</span>) <span class="co"># using R.Friedman API key as default</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>  { </span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (geoSubset <span class="sc">==</span> <span class="st">"all"</span>) {geoSubset <span class="ot">=</span> <span class="st">"*"</span>} <span class="co"># converts entry of "all" into "*" </span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.numeric</span>(year)){<span class="fu">stop</span>(<span class="st">"Year must be a number"</span>)} <span class="co"># first checks if year is a number</span></span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (year <span class="sc">==</span> <span class="dv">2020</span> <span class="sc">|</span> year <span class="sc">%%</span> <span class="dv">1</span> <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">|</span> year <span class="sc">&gt;</span> <span class="dv">2022</span> <span class="sc">|</span> year <span class="sc">&lt;</span> <span class="dv">2010</span>){ <span class="co"># check if year is valid integer between 2010 and 2022, excluding 2020</span></span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid year.  Must be an integer from 2010 to 2022, excluding 2020"</span>)}</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>  ValidNumVars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"PWGTP"</span>, <span class="st">"AGEP"</span>, <span class="st">"GASP"</span>, <span class="st">"GRPIP"</span>, <span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>, <span class="st">"JWMNP"</span>) <span class="co"># list of all valid variables for numVars</span></span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>  ValidCatVars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>) <span class="co"># list of all valid variables for catVars</span></span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>  ValidLevelVars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"region"</span>, <span class="st">"division"</span>, <span class="st">"state"</span>) <span class="co"># list of all valid variables for geoLevel</span></span>
+<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-19"><a href="#cb28-19" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">all</span>(numVars <span class="sc">%in%</span> ValidNumVars)) { <span class="co"># confirm numeric variables are valid</span></span>
+<span id="cb28-20"><a href="#cb28-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid numeric variable(s).  Valid numeric variables are: PWGTP, AGEP, GASP, GRPIP, JWAP, JWDP, JWMNP."</span>)}  </span>
+<span id="cb28-21"><a href="#cb28-21" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">all</span>(catVars <span class="sc">%in%</span> ValidCatVars)) { <span class="co"># confirm categorical variables are valid</span></span>
+<span id="cb28-22"><a href="#cb28-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid categorical variable(s).  Valid categorical variables are: FER, HHL, SCH, SCHL, SEX."</span>)}    </span>
+<span id="cb28-23"><a href="#cb28-23" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">all</span>(geoLevel <span class="sc">%in%</span> ValidLevelVars)) { <span class="co"># confirm geography level variables are valid</span></span>
+<span id="cb28-24"><a href="#cb28-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid geography level variable(s).  Valid geography levels are: region, division, state."</span>)}    </span>
+<span id="cb28-25"><a href="#cb28-25" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-26"><a href="#cb28-26" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(<span class="fu">unique</span>(numVars)) <span class="sc">!=</span> <span class="fu">length</span>(numVars)) { <span class="co"># checking for duplicated numeric variables</span></span>
+<span id="cb28-27"><a href="#cb28-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Error: Duplicated numeric variable"</span>)}</span>
+<span id="cb28-28"><a href="#cb28-28" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(<span class="fu">unique</span>(catVars)) <span class="sc">!=</span> <span class="fu">length</span>(catVars))  { <span class="co"># checking for duplicated categorical variables</span></span>
+<span id="cb28-29"><a href="#cb28-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Error: Duplicated categorical variable"</span>)}</span>
+<span id="cb28-30"><a href="#cb28-30" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-31"><a href="#cb28-31" aria-hidden="true" tabindex="-1"></a>  numVars <span class="ot">&lt;-</span> numVars[numVars <span class="sc">!=</span> <span class="st">"PWGTP"</span>] <span class="co"># pulling out PWGTP from numVars since that variable is always included anyways</span></span>
+<span id="cb28-32"><a href="#cb28-32" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-33"><a href="#cb28-33" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="fu">length</span>(numVars) <span class="sc">&lt;</span> <span class="dv">1</span> ) { <span class="co"># checks minimum input requirement for numVars</span></span>
+<span id="cb28-34"><a href="#cb28-34" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Must specify at least one numeric variable other than PWGTP"</span>)}  </span>
+<span id="cb28-35"><a href="#cb28-35" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="fu">length</span>(catVars) <span class="sc">&lt;</span> <span class="dv">1</span> ) { <span class="co"># checks minimum input requirement for catVars</span></span>
+<span id="cb28-36"><a href="#cb28-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Must specify at least one categorical variable"</span>)} </span>
+<span id="cb28-37"><a href="#cb28-37" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-38"><a href="#cb28-38" aria-hidden="true" tabindex="-1"></a>  <span class="co"># establish the valid codes for regions, divisions, and states</span></span>
+<span id="cb28-39"><a href="#cb28-39" aria-hidden="true" tabindex="-1"></a>  ValidRegions <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"4"</span>, <span class="st">"*"</span>)</span>
+<span id="cb28-40"><a href="#cb28-40" aria-hidden="true" tabindex="-1"></a>  ValidDivisions <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"4"</span>, <span class="st">"5"</span>, <span class="st">"6"</span>, <span class="st">"7"</span>, <span class="st">"8"</span>, <span class="st">"9"</span>, <span class="st">"*"</span>)</span>
+<span id="cb28-41"><a href="#cb28-41" aria-hidden="true" tabindex="-1"></a>  ValidStates <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"01"</span>, <span class="st">"02"</span>, <span class="st">"04"</span>, <span class="st">"05"</span>, <span class="st">"06"</span>, <span class="st">"08"</span>, <span class="st">"09"</span>, <span class="st">"10"</span>, <span class="st">"11"</span>, <span class="st">"12"</span>, <span class="st">"13"</span>, <span class="st">"15"</span>, <span class="st">"16"</span>, <span class="st">"17"</span>, <span class="st">"18"</span>, <span class="st">"19"</span>, <span class="st">"20"</span>, </span>
+<span id="cb28-42"><a href="#cb28-42" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"21"</span>, <span class="st">"22"</span>, <span class="st">"23"</span>, <span class="st">"24"</span>, <span class="st">"25"</span>, <span class="st">"26"</span>, <span class="st">"27"</span>, <span class="st">"28"</span>, <span class="st">"29"</span>, <span class="st">"30"</span>, <span class="st">"31"</span>, <span class="st">"32"</span>, <span class="st">"33"</span>, <span class="st">"34"</span>, <span class="st">"35"</span>, <span class="st">"36"</span>, <span class="st">"37"</span>, </span>
+<span id="cb28-43"><a href="#cb28-43" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"38"</span>, <span class="st">"39"</span>, <span class="st">"40"</span>, <span class="st">"41"</span>, <span class="st">"42"</span>, <span class="st">"44"</span>, <span class="st">"45"</span>, <span class="st">"46"</span>, <span class="st">"47"</span>, <span class="st">"48"</span>, <span class="st">"49"</span>, <span class="st">"50"</span>, <span class="st">"51"</span>, <span class="st">"53"</span>, <span class="st">"54"</span>, <span class="st">"55"</span>, <span class="st">"56"</span>, <span class="st">"*"</span>)</span>
+<span id="cb28-44"><a href="#cb28-44" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-45"><a href="#cb28-45" aria-hidden="true" tabindex="-1"></a>  <span class="co"># add corresponding names (to be used later).  "All" is simply a placeholder that will not be used</span></span>
+<span id="cb28-46"><a href="#cb28-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(ValidDivisions) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"New England"</span>, <span class="st">"Middle Atlantic"</span>, <span class="st">"East North Central"</span>, <span class="st">"West North Central"</span>, </span>
+<span id="cb28-47"><a href="#cb28-47" aria-hidden="true" tabindex="-1"></a>                             <span class="st">"South Atlantic"</span>, <span class="st">"East South Central"</span>, <span class="st">"West South Central"</span>, <span class="st">"Mountain"</span>, <span class="st">"Pacific"</span>, <span class="st">"All"</span>)</span>
+<span id="cb28-48"><a href="#cb28-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(ValidRegions) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Northeast"</span>, <span class="st">"Midwest"</span>, <span class="st">"South"</span>, <span class="st">"West"</span>, <span class="st">"All"</span>)</span>
+<span id="cb28-49"><a href="#cb28-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(ValidStates) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Alabama"</span>, <span class="st">"Alaska"</span>, <span class="st">"Arizona"</span>, <span class="st">"Arkansas"</span>, <span class="st">"California"</span>, <span class="st">"Colorado"</span>, <span class="st">"Connecticut"</span>, <span class="st">"Delaware"</span>, </span>
+<span id="cb28-50"><a href="#cb28-50" aria-hidden="true" tabindex="-1"></a>                          <span class="st">"District of Columbia"</span>, <span class="st">"Florida"</span>, <span class="st">"Georgia"</span>, <span class="st">"Hawaii"</span>, <span class="st">"Idaho"</span>, <span class="st">"Illinois"</span>, <span class="st">"Indiana"</span>, <span class="st">"Iowa"</span>, </span>
+<span id="cb28-51"><a href="#cb28-51" aria-hidden="true" tabindex="-1"></a>                          <span class="st">"Kansas"</span>, <span class="st">"Kentucky"</span>, <span class="st">"Louisiana"</span>, <span class="st">"Maine"</span>, <span class="st">"Maryland"</span>, <span class="st">"Massachusetts"</span>, <span class="st">"Michigan"</span>, <span class="st">"Minnesota"</span>, </span>
+<span id="cb28-52"><a href="#cb28-52" aria-hidden="true" tabindex="-1"></a>                          <span class="st">"Mississippi"</span>, <span class="st">"Missouri"</span>, <span class="st">"Montana"</span>, <span class="st">"Nebraska"</span>, <span class="st">"Nevada"</span>, <span class="st">"New Hampshire"</span>, <span class="st">"New Jersey"</span>, </span>
+<span id="cb28-53"><a href="#cb28-53" aria-hidden="true" tabindex="-1"></a>                          <span class="st">"New Mexico"</span>, <span class="st">"New York"</span>, <span class="st">"North Carolina"</span>, <span class="st">"North Dakota"</span>, <span class="st">"Ohio"</span>, <span class="st">"Oklahoma"</span>, <span class="st">"Oregon"</span>, </span>
+<span id="cb28-54"><a href="#cb28-54" aria-hidden="true" tabindex="-1"></a>                          <span class="st">"Pennsylvania"</span>, <span class="st">"Rhode Island"</span>, <span class="st">"South Carolina"</span>, <span class="st">"South Dakota"</span>, <span class="st">"Tennessee"</span>, <span class="st">"Texas"</span>, <span class="st">"Utah"</span>, </span>
+<span id="cb28-55"><a href="#cb28-55" aria-hidden="true" tabindex="-1"></a>                          <span class="st">"Vermont"</span>, <span class="st">"Virginia"</span>, <span class="st">"Washington"</span>, <span class="st">"West Virginia"</span>, <span class="st">"Wisconsin"</span>, <span class="st">"Wyoming"</span>, <span class="st">"All"</span>)</span>
+<span id="cb28-56"><a href="#cb28-56" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-57"><a href="#cb28-57" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (geoLevel <span class="sc">==</span> <span class="st">"region"</span> <span class="sc">&amp;</span> <span class="sc">!</span>(geoSubset <span class="sc">%in%</span> ValidRegions)) { <span class="co"># check if geoSubset matches valid regions</span></span>
+<span id="cb28-58"><a href="#cb28-58" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid region code"</span>)} </span>
+<span id="cb28-59"><a href="#cb28-59" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (geoLevel <span class="sc">==</span> <span class="st">"division"</span> <span class="sc">&amp;</span> <span class="sc">!</span>(geoSubset <span class="sc">%in%</span> ValidDivisions)) { <span class="co"># check if geoSubset matches valid divisions</span></span>
+<span id="cb28-60"><a href="#cb28-60" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid division code"</span>)} </span>
+<span id="cb28-61"><a href="#cb28-61" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (geoLevel <span class="sc">==</span> <span class="st">"state"</span> <span class="sc">&amp;</span> <span class="sc">!</span>(geoSubset <span class="sc">%in%</span> ValidStates)) { <span class="co"># check if geoSubset matches valid states</span></span>
+<span id="cb28-62"><a href="#cb28-62" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid state code"</span>)} </span>
+<span id="cb28-63"><a href="#cb28-63" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-64"><a href="#cb28-64" aria-hidden="true" tabindex="-1"></a>  APIURL <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://api.census.gov/data/"</span>, year, <span class="st">"/acs/acs1/pums?get=PWGTP,"</span>) <span class="co"># begins the URL including year and PWGTP</span></span>
+<span id="cb28-65"><a href="#cb28-65" aria-hidden="true" tabindex="-1"></a>  APIURL <span class="ot">&lt;-</span> <span class="fu">paste0</span>(APIURL, <span class="fu">paste</span>(numVars, <span class="at">collapse =</span> <span class="st">","</span>), <span class="st">","</span>, <span class="fu">paste</span>(catVars, <span class="at">collapse =</span> <span class="st">","</span>)) <span class="co"># adds numeric variables and categorical variables</span></span>
+<span id="cb28-66"><a href="#cb28-66" aria-hidden="true" tabindex="-1"></a>  APIURL <span class="ot">&lt;-</span> <span class="fu">paste0</span>(APIURL, <span class="st">"&amp;for="</span>, geoLevel, <span class="st">":"</span>, geoSubset) <span class="co"># adds geoLevel and subset</span></span>
+<span id="cb28-67"><a href="#cb28-67" aria-hidden="true" tabindex="-1"></a>  APIURL <span class="ot">&lt;-</span> <span class="fu">paste0</span>(APIURL, <span class="st">"&amp;key="</span>, APIKey) <span class="co"># adds API key</span></span>
+<span id="cb28-68"><a href="#cb28-68" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-69"><a href="#cb28-69" aria-hidden="true" tabindex="-1"></a>  QCensusParsed <span class="ot">&lt;-</span> <span class="fu">IntoTibble</span>(<span class="fu">GET</span>(APIURL)) <span class="co"># Gets tibble from URL</span></span>
+<span id="cb28-70"><a href="#cb28-70" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-71"><a href="#cb28-71" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">c</span>(<span class="st">"PWGTP"</span>, numVars)) { <span class="co"># cycle through all relevant numeric variables, adding PWGTP back in</span></span>
+<span id="cb28-72"><a href="#cb28-72" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (i <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"PWGTP"</span>, <span class="st">"AGEP"</span>, <span class="st">"GASP"</span>, <span class="st">"GRPIP"</span>, <span class="st">"JWMNP"</span>)) { <span class="co"># these variables are pure numbers</span></span>
+<span id="cb28-73"><a href="#cb28-73" aria-hidden="true" tabindex="-1"></a>      QCensusParsed[[i]] <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(QCensusParsed[[i]]) <span class="co"># convert to numeric</span></span>
+<span id="cb28-74"><a href="#cb28-74" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb28-75"><a href="#cb28-75" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (i <span class="sc">==</span> <span class="st">"JWAP"</span>) { <span class="co"># converting JWAP times</span></span>
+<span id="cb28-76"><a href="#cb28-76" aria-hidden="true" tabindex="-1"></a>      QCensusParsed <span class="ot">&lt;-</span> QCensusParsed <span class="sc">|&gt;</span></span>
+<span id="cb28-77"><a href="#cb28-77" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">JWAP =</span> <span class="fu">as.numeric</span>(JWAP)) <span class="sc">|&gt;</span> <span class="co"># convert JWAP to numeric to match JWAPTibble</span></span>
+<span id="cb28-78"><a href="#cb28-78" aria-hidden="true" tabindex="-1"></a>        <span class="fu">left_join</span>(JWAPTibble, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"JWAP"</span> <span class="ot">=</span> <span class="st">"value"</span>)) <span class="sc">|&gt;</span> <span class="co"># join with JWAPTibble, keeping the original QCensusParsed and correlating the codes</span></span>
+<span id="cb28-79"><a href="#cb28-79" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">JWAP =</span> time) <span class="sc">|&gt;</span> <span class="co"># we can now overwrite JWAP in QCensusParsed with the proper time values</span></span>
+<span id="cb28-80"><a href="#cb28-80" aria-hidden="true" tabindex="-1"></a>        <span class="fu">select</span>(<span class="sc">!</span><span class="fu">c</span>(string, time)) <span class="co"># remove unused string and time variables</span></span>
+<span id="cb28-81"><a href="#cb28-81" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb28-82"><a href="#cb28-82" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (i <span class="sc">==</span> <span class="st">"JWDP"</span>) { <span class="co">#converting JWDP times, same as above</span></span>
+<span id="cb28-83"><a href="#cb28-83" aria-hidden="true" tabindex="-1"></a>      QCensusParsed <span class="ot">&lt;-</span> QCensusParsed <span class="sc">|&gt;</span></span>
+<span id="cb28-84"><a href="#cb28-84" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">JWDP =</span> <span class="fu">as.numeric</span>(JWDP)) <span class="sc">|&gt;</span></span>
+<span id="cb28-85"><a href="#cb28-85" aria-hidden="true" tabindex="-1"></a>        <span class="fu">left_join</span>(JWDPTibble, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"JWDP"</span> <span class="ot">=</span> <span class="st">"value"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb28-86"><a href="#cb28-86" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">JWDP =</span> time) <span class="sc">|&gt;</span></span>
+<span id="cb28-87"><a href="#cb28-87" aria-hidden="true" tabindex="-1"></a>        <span class="fu">select</span>(<span class="sc">!</span><span class="fu">c</span>(string, time))      </span>
+<span id="cb28-88"><a href="#cb28-88" aria-hidden="true" tabindex="-1"></a>    }   </span>
+<span id="cb28-89"><a href="#cb28-89" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb28-90"><a href="#cb28-90" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-91"><a href="#cb28-91" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> catVars){ <span class="co"># cycle through all relevant categorical variables in catVars</span></span>
+<span id="cb28-92"><a href="#cb28-92" aria-hidden="true" tabindex="-1"></a>    QCensusParsed[[i]] <span class="ot">&lt;-</span> <span class="fu">factor</span>(QCensusParsed[[i]]) <span class="co"># convert to factor</span></span>
+<span id="cb28-93"><a href="#cb28-93" aria-hidden="true" tabindex="-1"></a>  } <span class="co"># Consider setting labels for these if time allows.   </span></span>
+<span id="cb28-94"><a href="#cb28-94" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-95"><a href="#cb28-95" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(QCensusParsed)</span>
+<span id="cb28-96"><a href="#cb28-96" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Let’s test some uses of QCensus()</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">QCensus</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5,962 × 4
+   PWGTP  AGEP SEX   state
+   &lt;dbl&gt; &lt;dbl&gt; &lt;fct&gt; &lt;chr&gt;
+ 1    25    43 1     56   
+ 2   128    40 1     56   
+ 3   121    18 1     56   
+ 4    24    21 2     56   
+ 5    26    92 2     56   
+ 6    25    19 2     56   
+ 7    91    20 1     56   
+ 8    20    18 2     56   
+ 9   132    85 1     56   
+10    89    20 1     56   
+# ℹ 5,952 more rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># test of function</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="co">#system.time(head(QCensus(year = 2021, numVars = c("AGEP"), catVars = c("SCHL", "SEX"), geoLevel = "state", geoSubset = "01" )))</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="co">#system.time(head(QCensus(year = 2021, numVars = c("JWAP"), catVars = c("SCHL", "SEX"), geoLevel = "state", geoSubset = "01" )))</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="co">#system.time(head(QCensus(year = 2021, numVars = c("JWAP", "JWDP"), catVars = c("SCHL", "SEX"), geoLevel = "state", geoSubset = "01" )))</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="co">#system.time(head(QCensus(year = 2021, numVars = c("JWAP", "JWDP"), catVars = c("SCHL", "SEX"), geoLevel = "state", geoSubset = "56" )))</span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a><span class="co">#system.time(head(QCensus(year = 2021, numVars = c("JWAP", "JWDP"), catVars = c("SCHL", "SEX"), geoLevel = "region", geoSubset = "1" )))</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="multi-year-query-function-qmulticensus" class="level2">
+<h2 class="anchored" data-anchor-id="multi-year-query-function-qmulticensus">Multi-Year Query Function <code>QMultiCensus()</code></h2>
 
 
 </section>
