@@ -74,6 +74,70 @@ head(IntoTibble(TestData)) # testing against the above data
 
 Test of `IntoTibble()` function is successful.
 
+## Time Range String Conversion Function `StringToTime()`
+
+JWAP and JWDP both associate time codes with character strings representing a time range. `StringToTime()` will convert the character string into the middle value of the time range as minutes past midnight (i.e. 1:15am would be 75 minutes past midnight)
+
+Example character strings: "9:55 p.m. to 9:59 p.m." "11:00 p.m. to 11:04 p.m." "4:10 a.m. to 4:14 a.m."
+
+If we split the string by both " " and ":", we'll get a vector of 7 predictable elements:
+
+1.  Hours for start time
+
+2.  Minutes for start time
+
+3.  "a.m." or "p.m."
+
+4.  "to" (not used)
+
+5.  Hours for end time
+
+6.  Minutes for end time
+
+7.  "a.m." or "p.m."
+
+Writing and testing the `StringToTime()` function:
+
+```{r}
+StringToTime <- function (string) {
+  vector <- unlist(strsplit(string, "[ :]")) # split the string by space and colon as described above, then unlist() resulting in a vector
+  if(vector[1] == "12") {vector[1] <- "0"} # 12am counts as zero hours past midnight, so 12 should become 0
+  if(vector[5] == "12") {vector[5] <- "0"} 
+  StartTime <- as.numeric(vector[1]) * 60 + as.numeric(vector[2]) # calculates time as hours * 60 + minutes
+  if(vector[3] == "p.m.") {StartTime <- StartTime + 12 * 60} # adds 12*60 minutes if p.m.
+  EndTime <- as.numeric(vector[5]) * 60 + as.numeric(vector[6])
+  if(vector[7] == "p.m.") {EndTime <- EndTime + 12 * 60}
+  MeanTime <- mean(c(StartTime, EndTime)) # calculates the center of the range as the mean between start and end
+  return(MeanTime) # returns middle of the range as minutes past midnight
+}
+
+StringToTime("9:55 p.m. to 9:59 p.m.") # testing example strings
+StringToTime("11:00 p.m. to 11:04 p.m.")
+StringToTime("4:10 a.m. to 4:14 a.m.")
+```
+
+Test of `StringToTime()` is successful.
+
+
+## JWAP Time Conversion Function `JWAPConvert()`
+
+JWAP is a numeric variable that maps onto an irregular range of times. `JWAPConvert()` will take the JWAP numeric as input and return the middle value of the time range as minutes past midnight (i.e. 1:15am would be 75 minutes past midnight)
+
+```{r}
+JWAP <- fromJSON("Project1DataFiles/JWAP.json") # this JWAP descriptor is from https://api.census.gov/data/2022/acs/acs1/pums/variables/JWAP.json
+JWAP <- unlist(JWAP$values$item) # gets to the useful content of the file
+str(JWAP)
+head(JWAP)
+```
+
+Now we have a named vector of 286 character strings. The names are per the various JWAP codes. The strings are the descriptions of the time interval. Lets convert into a more useful tibble.
+
+```{r}
+JWAPTibble <- as_tibble(names(JWAP))
+JWAPTibble <- mutate(JWAPTibble, string = JWAP)
+JWAPTibble <- mutate(JWAPTibble, time = StringToTime(string))
+```
+
 ## Single Year Query Function `QCensus()`
 
 `QCensus()` will query the API and allow user to specify:
@@ -158,19 +222,24 @@ QCensus <- function (year = 2022,
   if (geoLevel == "state" & !(geoSubset %in% ValidStates)) { # check if geoSubset matches valid states
     stop("Invalid state code")} 
   
-  
   APIURL <- paste0("https://api.census.gov/data/", year, "/acs/acs1/pums?get=PWGTP,") # begins the URL including year and PWGTP
   APIURL <- paste0(APIURL, paste(numVars, collapse = ","), ",", paste(catVars, collapse = ",")) # adds numeric variables and categorical variables
   APIURL <- paste0(APIURL, "&for=", geoLevel, ":", geoSubset) # adds geoLevel and subset
   APIURL <- paste0(APIURL, "&key=", APIKey) # adds API key
   
-  QCensusParsed <- IntoTibble(GET(APIURL))
+  QCensusParsed <- IntoTibble(GET(APIURL)) # Gets tibble from URL
   
-  # check API return success?
   # fix variable types
   
-  return(QCensusParsed)
+  for (i in c("PWGTP", numVars)){ # cycle through all relevant numeric variables, adding PWGTP back in
+    if (i %in% c("PWGTP", "AGEP", "GASP", "GRPIP", "JWMNP")) { # these variables are pure numbers
+      QCensusParsed[[i]] <- as.numeric(QCensusParsed[[i]]) # convert to numeric
+    }
+    if (i %in% c("JWAP", "JWDP")) # these variables are time:  
+  }
   
+  
+  return(QCensusParsed)
   
 }
 ```
