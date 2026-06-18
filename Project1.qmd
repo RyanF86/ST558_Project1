@@ -57,7 +57,7 @@ head(TestCleaned)
 str(TestCleaned)
 ```
 
-Looks good.  We'll work on automating this process later.
+Looks good. We'll work on automating this process later.
 
 ## Helper Function `IntoTibble()`
 
@@ -284,6 +284,8 @@ QCensus <- function (year = 2022,
 
   # Consider setting factor labels for catVars and/or geoSubset levels if time allows. 
   
+  class(QCensusParsed) <- c("census", class(QCensusParsed)) # adds class "census" to the tibble output
+  
   return(QCensusParsed)
 }
 ```
@@ -308,9 +310,9 @@ system.time(print(QCensus(year = 2018, numVars = c("AGEP", "JWDP", "JWAP", "GRPI
 # BigTest took ~6 minutes and returned ~3.1 million rows.  Compute time ("user") was 41 sec, so the code is not the bottleneck.  Not going to have this running in the .qmd, but it did work!
 ```
 
-Runtime is manageable but increases with the size of the query (per geoLevel and geoSubset).  Majority of runtime is waiting on the API rather than compute, so code is reasonably optimized.  Be wary of setting geoSubset = "all" resulting in runtimes over 5 min. 
+Runtime is manageable but increases with the size of the query (per geoLevel and geoSubset). Majority of runtime is waiting on the API rather than compute, so code is reasonably optimized. Be wary of setting geoSubset = "all" resulting in runtimes over 5 min.
 
-All tests of `QCensus()` are successful.  
+All tests of `QCensus()` are successful.
 
 ## Multi-Year Query Function `QMultiCensus()`
 
@@ -364,3 +366,53 @@ remove(RunTest) # delete temp variable
 ```
 
 All tests of `QMultiCensus()` are successful.
+
+## `summary()` for Census Data
+
+The "census" class has been added to the tibble returned by `QCensus()` above.  This also carries through to `QMultiCensus`
+
+We will write our own function to direct how `summary()` is applied to "census" objects
+
+```{r}
+summary.census <- function(CensusTibble, 
+                           numVars = c("AGEP", "GASP", "GRPIP", "JWMNP"), # by default includes applicable numeric variables.  excludes PWGTP, JWAP, JDAP, and year
+                           catVars = c("FER", "HHL", "SCH", "SCHL", "SEX", "region", "division", "state")){ # by default includes all possible categorical variables (also geoLevel if the tibble includes multiple SubSets)
+  
+  meanVec = NULL # creating placeholders
+  sdVec = NULL
+  countVec = NULL
+  
+  for (i in names(CensusTibble)){ # loop through all the census tibble variable names
+    if (i %in% numVars) { # if the name matches one of the specified numeric variables... 
+      meanVec[[i]] <- sum(CensusTibble[[i]]*CensusTibble[["PWGTP"]])/sum(CensusTibble[["PWGTP"]]) # build a vector of calculated weighted means, naming each element per the index
+      sdVec[[i]] <- sqrt(sum(CensusTibble[[i]]^2*CensusTibble[["PWGTP"]])/sum(CensusTibble[["PWGTP"]])-meanVec[[i]]^2) # build a vector of calculated weighted sd, naming each element per the index
+    }
+    if (i %in% catVars) { # if the name matches one of the specified categorical variables...
+      countVec[[i]] <- table(CensusTibble[[i]]) # use table() to return un-weighted counts for the levels of the factors
+    }
+  }
+  CombinedSummary = list("mean" = meanVec, "sd" = sdVec, "count" = countVec) # combine the three summary named vectors into a list
+  return(CombinedSummary)
+} 
+```
+
+```{r}
+# testing all variables across multiple years
+summary(QMultiCensus(CensusYears = c(2015:2017), numVars = c("PWGTP", "AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP"), catVars = c("FER", "HHL", "SCH", "SCHL", "SEX"), geoLevel = "state", geoSubset = "02"))
+```
+
+```{r}
+# testing select variables AGEP and HHL for one year
+summary(QCensus(year = 2018, numVars = c("AGEP", "JWDP", "JWAP", "GRPIP"), catVars = c("FER", "HHL"), geoLevel = "division", geoSubset = "4" ), numVars = c("AGEP"), catVars = c("HHL"))
+```
+All tests of `summary()` are successful.
+
+## `plot()` for Census Data
+
+We will write our own function to direct how `plot()` is applied to "census" objects
+
+```{r}
+plot.census <- function(CensusTibble, numVar = NULL , catVar = NULL){ 
+  # details TBD
+}
+```
