@@ -17,6 +17,7 @@ library(jsonlite)
 library(psych)
 library(gt)
 library(tidycensus)
+library(quantreg)
 ```
 
 ```{r}
@@ -301,8 +302,9 @@ system.time(print(QCensus(year = 2021, numVars = c("JWAP", "JWDP"), catVars = c(
 ```
 
 ```{r}
-system.time(print(QCensus(year = 2018, numVars = c("AGEP", "JWDP", "JWAP", "GRPIP"), catVars = c("FER"), geoLevel = "division", geoSubset = "4" ))) # trying a division and some other variables
+system.time(print(QCensus(year = 2018, numVars = c("AGEP", "JWDP", "JWAP", "JWMNP", "GRPIP"), catVars = c("FER"), geoLevel = "division", geoSubset = "4" ))) # trying a division and some other variables
 ```
+Note:  Departure time for work "JWDP" and work arrival time "JWAP" calculations are approximately validated by work travel time "JWMNP". Calculation is not always exact since JWDP and JWAP assume the middle of the time range reported.
 
 ```{r}
 # system.time(BigTest <- QCensus(year = 2015, numVars = c("PWGTP", "AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP"), catVars = c("FER", "HHL", "SCH", "SCHL", "SEX"), geoLevel = "state", geoSubset = "all"))
@@ -393,8 +395,13 @@ summary.census <- function(CensusTibble,
   }
   CombinedSummary = list("mean" = meanVec, "sd" = sdVec, "count" = countVec) # combine the three summary named vectors into a list
   return(CombinedSummary)
+  
+  # Note:  Want to clean up the output display
+  
 } 
 ```
+
+Now some tests of `summary()`
 
 ```{r}
 # testing all variables across multiple years
@@ -412,7 +419,46 @@ All tests of `summary()` are successful.
 We will write our own function to direct how `plot()` is applied to "census" objects
 
 ```{r}
-plot.census <- function(CensusTibble, numVar = NULL , catVar = NULL){ 
-  # details TBD
+plot.census <- function(CensusTibble, numVar = "AGEP" , catVar = "SEX"){  # setting these AGEP and SEX as the defaults
+  
+  ValidNumVars <- c("AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP") # list of all valid varaibles for numVar
+  ValidCatVars <- c("FER", "HHL", "SCH", "SCHL", "SEX") # list of all valid variables for catVar
+ 
+  
+  if (!(numVar %in% ValidNumVars)) {stop("Invalid numeric variable.  Valid options are AGEP, GASP, GRPIP, JWAP, JWDP, JWMNP")} 
+  if (!(catVar %in% ValidCatVars)) {stop("Invalid categorical variable.  Valid options are FER, HHL, SCH, SCHL, SEX")} 
+  
+  if (!(numVar %in% names(CensusTibble))) {stop(paste0(numVar, " is not found in tibble"))}
+  if (!(catVar %in% names(CensusTibble))) {stop(paste0(catVar, " is not found in tibble"))}
+  
+  g <- ggplot(CensusTibble |> drop_na(all_of(numVar), all_of(catVar)))
+  g + 
+    geom_boxplot(aes(x = get(catVar), y = get(numVar), weight = PWGTP, fill = get(catVar))) + 
+    labs(x = catVar, y = numVar, title = paste0(numVar, " by ", catVar)) +
+    scale_fill_discrete(catVar) +
+    theme(plot.title = element_text(hjust = 0.5))
+
 }
 ```
+
+Now some tests of `plot()`
+
+```{r}
+plot(QCensus(numVars = "AGEP", catVars = "SCH"), numVar = "AGEP", catVar = "SCH")
+```
+
+```{r}
+plot(QMultiCensus(CensusYears = c(2021:2022), numVars = "GASP", catVars = "HHL", geoSubset = "02" ), numVar = "GASP", catVar = "HHL")
+```
+
+All tests of `plot()` are successful.
+
+## Data Investigation
+
+```{r}
+plot(QCensus(numVars = "AGEP", catVars = "SCH"), numVar = "AGEP", catVar = "SCH") +
+  labs(x = "School Enrollment", y = "Age", title = "Age by School Enrollment") +
+  scale_fill_discrete(name = "School Enrollment", labels = c("0" = "Less than age 3", "1" = "Yes, Private", "2" = "No w/in 3 mo", "3" = "Yes, Public"))
+  scale_x_discrete(name = "School Enrollment")
+```
+
