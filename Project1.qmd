@@ -224,14 +224,14 @@ QCensus <- function (year = 2022,
   if(length(catVars) < 1 ) { # checks minimum input requirement for catVars
     stop("Must specify at least one categorical variable")} 
   
-  # establish the valid codes for regions, divisions, and states
+  # Establish the valid codes for regions, divisions, and states
   ValidRegions <- c("1", "2", "3", "4", "*")
   ValidDivisions <- c("1", "2", "3", "4", "5", "6", "7", "8", "9", "*")
   ValidStates <- c("01", "02", "04", "05", "06", "08", "09", "10", "11", "12", "13", "15", "16", "17", "18", "19", "20", 
                    "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", 
                    "38", "39", "40", "41", "42", "44", "45", "46", "47", "48", "49", "50", "51", "53", "54", "55", "56", "*")
   
-  # add corresponding names (to be used later).  "All" is simply a placeholder that will not be used
+  # Add corresponding names.  This may or may not be used later.  
   names(ValidDivisions) <- c("New England", "Middle Atlantic", "East North Central", "West North Central", 
                              "South Atlantic", "East South Central", "West South Central", "Mountain", "Pacific", "All")
   names(ValidRegions) <- c("Northeast", "Midwest", "South", "West", "All")
@@ -278,7 +278,9 @@ QCensus <- function (year = 2022,
   }
   
   for (i in catVars){ # cycle through all relevant categorical variables in catVars
-    QCensusParsed[[i]] <- factor(QCensusParsed[[i]]) # convert to factor
+    # factor levels do not order as desired for plotting later, so we have to force it here
+    numLevels <- as.character(sort(as.numeric(unique(QCensusParsed[[i]])))) # create a vector of the categorical factor levels as characters but sorted numerically
+    QCensusParsed[[i]] <- factor(QCensusParsed[[i]], levels = numLevels) # convert to factor and apply levels in the correct order per numLevels
   } 
   
   QCensusParsed[[geoLevel]] <- factor(QCensusParsed[[geoLevel]]) # convert appropriate geoLevel to a factor
@@ -377,7 +379,8 @@ We will write our own function to direct how `summary()` is applied to "census" 
 
 ```{r}
 summary.census <- function(CensusTibble, 
-                           numVars = c("AGEP", "GASP", "GRPIP", "JWMNP"), # by default includes applicable numeric variables.  excludes PWGTP, JWAP, JDAP, and year
+                           numVars = c("AGEP", "GASP", "GRPIP", "JWMNP", "JWAP"), # by default includes applicable numeric variables.  excludes PWGTP, JDAP, and year
+                           ## Note:  JWAP was deliberately included so that it could be analyzed in the Data Investigation section
                            catVars = c("FER", "HHL", "SCH", "SCHL", "SEX", "region", "division", "state")){ # by default includes all possible categorical variables (also geoLevel if the tibble includes multiple SubSets)
   
   meanVec = NULL # creating placeholders
@@ -395,9 +398,6 @@ summary.census <- function(CensusTibble,
   }
   CombinedSummary = list("mean" = meanVec, "sd" = sdVec, "count" = countVec) # combine the three summary named vectors into a list
   return(CombinedSummary)
-  
-  # Note:  Want to clean up the output display
-  
 } 
 ```
 
@@ -421,22 +421,23 @@ We will write our own function to direct how `plot()` is applied to "census" obj
 ```{r}
 plot.census <- function(CensusTibble, numVar = "AGEP" , catVar = "SEX"){  # setting these AGEP and SEX as the defaults
   
-  ValidNumVars <- c("AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP") # list of all valid varaibles for numVar
+  ValidNumVars <- c("AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP") # list of all valid variables for numVar
   ValidCatVars <- c("FER", "HHL", "SCH", "SCHL", "SEX") # list of all valid variables for catVar
  
-  
+  #checking if the requested variables are valid
   if (!(numVar %in% ValidNumVars)) {stop("Invalid numeric variable.  Valid options are AGEP, GASP, GRPIP, JWAP, JWDP, JWMNP")} 
   if (!(catVar %in% ValidCatVars)) {stop("Invalid categorical variable.  Valid options are FER, HHL, SCH, SCHL, SEX")} 
   
+  #checking if the requested variables exist in the tibble
   if (!(numVar %in% names(CensusTibble))) {stop(paste0(numVar, " is not found in tibble"))}
   if (!(catVar %in% names(CensusTibble))) {stop(paste0(catVar, " is not found in tibble"))}
   
-  g <- ggplot(CensusTibble |> drop_na(all_of(numVar), all_of(catVar)))
+  g <- ggplot(CensusTibble |> drop_na(all_of(numVar), all_of(catVar))) # build plot that drops rows that have NA for either variable (not sure why all_of() is required instead of get())
   g + 
-    geom_boxplot(aes(x = get(catVar), y = get(numVar), weight = PWGTP, fill = get(catVar))) + 
-    labs(x = catVar, y = numVar, title = paste0(numVar, " by ", catVar)) +
-    scale_fill_discrete(catVar) +
-    theme(plot.title = element_text(hjust = 0.5))
+    geom_boxplot(aes(x = get(catVar), y = get(numVar), weight = PWGTP, fill = get(catVar))) + # set up boxplot and apply weights
+    labs(x = catVar, y = numVar, title = paste0(numVar, " by ", catVar)) + # set x label, y label, and title
+    scale_fill_discrete(catVar) + # set legent label
+    theme(plot.title = element_text(hjust = 0.5)) # center the title
 
 }
 ```
@@ -455,10 +456,46 @@ All tests of `plot()` are successful.
 
 ## Data Investigation
 
+Let's explore the relationship between Job Arrival Time (JWAP) and School Enrollment (SCH).
+
+To begin, we will use `QMultiCensus()` to grab census data from 2010 to 2022 (excluding 2020).  We will consider both Rhode Island (a predominantly urban state) and South Dakota (a heavy farming state) to see if any contrast is apparent in the data.
+
 ```{r}
-plot(QCensus(numVars = "AGEP", catVars = "SCH"), numVar = "AGEP", catVar = "SCH") +
-  labs(x = "School Enrollment", y = "Age", title = "Age by School Enrollment") +
-  scale_fill_discrete(name = "School Enrollment", labels = c("0" = "Less than age 3", "1" = "Yes, Private", "2" = "No w/in 3 mo", "3" = "Yes, Public"))
-  scale_x_discrete(name = "School Enrollment")
+RIData <- QMultiCensus(CensusYears = 2010:2022, numVars = "JWAP", catVars = "SCH", geoLevel = "state", geoSubset = "44")
 ```
 
+```{r}
+SDData <- QMultiCensus(CensusYears = 2010:2022, numVars = "JWAP", catVars = "SCH", geoLevel = "state", geoSubset = "46")
+```
+
+Next we use `plot()` on our census data to create box plots.  Titles, labels, and subtitles will be amended to be more descriptive of the dataset and specific variable details.
+
+```{r}
+plot(RIData, numVar = "JWAP", catVar = "SCH") +
+  labs(x = "School Enrollment", y = "Job Arrival Time", title = "Job Arrival Time by School Enrollment", subtitle = "Rhode Island 2010-2022 (excluding 2020)") +
+  scale_fill_discrete(name = "School Enrollment", labels = c("1" = "No w/in 3 mo", "2" = "Yes, Public", "3" = "Yes, Private")) +
+  scale_x_discrete(name = "School Enrollment") +
+  theme(plot.subtitle = element_text(hjust = 0.5))
+```
+
+```{r}
+plot(SDData, numVar = "JWAP", catVar = "SCH") +
+  labs(x = "School Enrollment", y = "Job Arrival Time", title = "Job Arrival Time by School Enrollment", subtitle = "South Dakota 2010-2022 (excluding 2020)") +
+  scale_fill_discrete(name = "School Enrollment", labels = c("1" = "No w/in 3 mo", "2" = "Yes, Public", "3" = "Yes, Private")) +
+  scale_x_discrete(name = "School Enrollment") +
+  theme(plot.subtitle = element_text(hjust = 0.5))
+```
+Review of the RI and SD boxplots provide the following observations:
+
+- Job arrival time is later in the day for people who are currently enrolled in school
+
+- The standard deviation of job arrival times is greater for current students vs non-students
+
+- Job arrival time (among non-students) is earlier in the day for SD compared to RI
+
+Let's reinforce these plot observations with calculated statistics. We will use `summary()` on our census data to calculate means and standard deviations.
+
+```{r}
+summary(RIData, numVars = "JWAP", catVars = "SCH")
+```
+NEED TO FIX JWAP NA RESULTS
