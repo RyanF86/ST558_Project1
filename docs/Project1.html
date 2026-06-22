@@ -497,21 +497,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 5,962 × 4
    PWGTP  AGEP SEX   state
    &lt;dbl&gt; &lt;dbl&gt; &lt;fct&gt; &lt;fct&gt;
- 1    25    43 1     56   
- 2   128    40 1     56   
- 3   121    18 1     56   
- 4    24    21 2     56   
- 5    26    92 2     56   
- 6    25    19 2     56   
- 7    91    20 1     56   
- 8    20    18 2     56   
- 9   132    85 1     56   
-10    89    20 1     56   
+ 1    38    58 1     56   
+ 2    25    34 1     56   
+ 3   217    52 1     56   
+ 4   321    15 1     56   
+ 5   101    51 2     56   
+ 6    83    57 1     56   
+ 7    67    51 1     56   
+ 8    10    60 1     56   
+ 9     9    61 2     56   
+10    73    41 1     56   
 # ℹ 5,952 more rows</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-   0.06    0.00    0.55 </code></pre>
+   0.05    0.03    0.53 </code></pre>
 </div>
 </div>
 <div class="cell">
@@ -534,7 +534,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-   1.28    0.10    7.15 </code></pre>
+   1.20    0.04    7.26 </code></pre>
 </div>
 </div>
 <div class="cell">
@@ -557,7 +557,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-   2.09    0.06   14.50 </code></pre>
+   2.05    0.05   14.59 </code></pre>
 </div>
 </div>
 <p>Note: Departure time for work “JWDP” and work arrival time “JWAP” calculations are approximately validated by work travel time “JWMNP”. Calculation is not always exact since JWDP and JWAP assume the middle of the time range reported.</p>
@@ -606,14 +606,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(RunTest <span class="ot">&lt;-</span> <span class="fu">QMultiCensus</span>(<span class="at">CensusYears =</span> <span class="fu">c</span>(<span class="dv">2018</span><span class="sc">:</span><span class="dv">2021</span>))) <span class="co"># default variables.  testing exclusion of year 2020</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-   0.12    0.02    1.25 </code></pre>
+   0.14    0.02    1.28 </code></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(RunTest) <span class="co"># check structure</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>census [17,568 × 5] (S3: census/tbl_df/tbl/data.frame)
- $ PWGTP: num [1:17568] 38 11 47 6 44 190 6 296 94 328 ...
- $ AGEP : num [1:17568] 62 38 29 19 32 52 19 80 18 35 ...
- $ SEX  : Factor w/ 2 levels "1","2": 1 2 2 2 2 1 1 2 2 1 ...
+ $ PWGTP: num [1:17568] 51 72 45 55 83 22 12 35 76 56 ...
+ $ AGEP : num [1:17568] 20 88 19 19 35 18 20 24 93 60 ...
+ $ SEX  : Factor w/ 2 levels "1","2": 1 2 2 1 2 2 1 2 2 1 ...
  $ state: Factor w/ 1 level "56": 1 1 1 1 1 1 1 1 1 1 ...
  $ year : int [1:17568] 2018 2018 2018 2018 2018 2018 2018 2018 2018 2018 ...</code></pre>
 </div>
@@ -627,7 +627,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(RunTest <span class="ot">&lt;-</span> <span class="fu">QMultiCensus</span>(<span class="at">CensusYears =</span> <span class="fu">c</span>(<span class="dv">2010</span><span class="sc">:</span><span class="dv">2022</span>), <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>), <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"SCHL"</span>, <span class="st">"SEX"</span>), <span class="at">geoLevel =</span> <span class="st">"state"</span>, <span class="at">geoSubset =</span> <span class="st">"02"</span> )) <span class="co"># Alaska data from 2010 to 2022</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-   0.77    0.05    7.47 </code></pre>
+   0.72    0.05    6.84 </code></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(RunTest) <span class="co"># check structure</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
@@ -911,9 +911,9 @@ $count$HHL
 </div>
 </div>
 <p>Expanding on the prior observations with statistical results:</p>
-<p>The following observations draw on combined PUMS data for Rhode Island and South Dakota across survey years 2010 through 2022 (excluding 2020, which the Census Bureau did not release due to the pandemic). Observations 1 and 2 pool both states; observation 3 contrasts them.</p>
+<p>The following observations draw on combined PUMS data for Rhode Island and South Dakota across survey years 2010 through 2022 (excluding 2020 due to the pandemic). Observations 1 and 2 pool both states. Observation 3 contrasts them.</p>
 <ol type="1">
-<li><p>Current students arrive at work later in the day than non-students. The weighted mean arrival time is 10:41 a.m. (641 minutes after midnight) for current students, compared to 8:36 a.m. (516 minutes) for non-students — a difference of more than two hours. A plausible explanation is that many students work after-school jobs, which start later in the day.</p></li>
+<li><p>Current students arrive at work later in the day than non-students. The weighted mean arrival time is 10:41 a.m. (641 minutes after midnight) for current students, compared to 8:36 a.m. (516 minutes) for non-students. This represents a difference of more than two hours. A plausible explanation is that many students work after-school jobs, which start later in the day.</p></li>
 <li><p>Arrival time is more variable for current students than non-students. The weighted standard deviation is 257 minutes for students versus 196 minutes for non-students. This may reflect students working irregular part-time hours scheduled around their classes, producing a wider spread of start times.</p></li>
 <li><p>Among non-students, arrival time is earlier in South Dakota than in Rhode Island. The weighted mean is 8:23 a.m. (503 minutes) in South Dakota versus 8:47 a.m. (527 minutes) in Rhode Island, with standard deviations of 189 and 202 minutes respectively. One possible explanation is a difference in the dominant job types between the two states: South Dakota is largely rural/agricultural and farm work tends to start early. Rhode Island is more urban and may skew toward office and service jobs with later start times.</p></li>
 </ol>

@@ -532,9 +532,9 @@ print(SDNonStudentsSD <- summary(filter(SDData, SCH == 1), numVars = "JWAP", cat
 
 Expanding on the prior observations with statistical results:
 
-The following observations draw on combined PUMS data for Rhode Island and South Dakota across survey years 2010 through 2022 (excluding 2020, which the Census Bureau did not release due to the pandemic). Observations 1 and 2 pool both states; observation 3 contrasts them.
+The following observations draw on combined PUMS data for Rhode Island and South Dakota across survey years 2010 through 2022 (excluding 2020 due to the pandemic). Observations 1 and 2 pool both states. Observation 3 contrasts them.
 
-1.  Current students arrive at work later in the day than non-students. The weighted mean arrival time is 10:41 a.m. (`r round(CombinedMeanStudents)` minutes after midnight) for current students, compared to 8:36 a.m. (`r round(CombinedMeanNonStudents)` minutes) for non-students — a difference of more than two hours. A plausible explanation is that many students work after-school jobs, which start later in the day.
+1.  Current students arrive at work later in the day than non-students. The weighted mean arrival time is 10:41 a.m. (`r round(CombinedMeanStudents)` minutes after midnight) for current students, compared to 8:36 a.m. (`r round(CombinedMeanNonStudents)` minutes) for non-students.  This represents a difference of more than two hours. A plausible explanation is that many students work after-school jobs, which start later in the day.
 
 2.  Arrival time is more variable for current students than non-students. The weighted standard deviation is `r round(CombinedSDStudents)` minutes for students versus `r round(CombinedSDNonStudents)` minutes for non-students. This may reflect students working irregular part-time hours scheduled around their classes, producing a wider spread of start times.
 
