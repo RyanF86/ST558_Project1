@@ -25,9 +25,9 @@ library(quantreg)
 APIKey <- "5a644b1ecc301cab1403e0940017740912735ef9" # R.Friedman API Key for census.gov
 ```
 
-## Test Query of API
+## 1. Test Query of API
 
-To start, we'll do a test query of the API and review the format of the data
+To start, we'll do a test query of the API and review the format of the PUMS Census data
 
 ```{r}
 TestData <- GET(paste0("https://api.census.gov/data/2022/acs/acs1/pums?get=SEX,PWGTP,AGEP&for=state:06&SCHL=24&key=", APIKey))
@@ -60,7 +60,7 @@ str(TestCleaned)
 
 Looks good. We'll work on automating this process later.
 
-## Helper Function `IntoTibble()`
+## 2. Helper Function `IntoTibble()`
 
 `IntoTibble()` function is designed to take the census data returned from the `GET()` and convert into a tibble similar to the steps above
 
@@ -77,7 +77,7 @@ head(IntoTibble(TestData)) # testing against the above data
 
 Test of `IntoTibble()` function is successful.
 
-## Time Range String Conversion Function `StringToTime()`
+## 3. Time Range String Conversion Function `StringToTime()`
 
 JWAP and JWDP both associate time codes with character strings representing a time range. `StringToTime()` will convert the character string into the middle value of the time range as minutes past midnight (i.e. 1:15am would be 75 minutes past midnight)
 
@@ -126,7 +126,7 @@ StringToTime("4:10 a.m. to 4:14 a.m.")
 
 Test of `StringToTime()` is successful.
 
-## `JWAPTibble`
+## 4. `JWAPTibble`
 
 JWAP is a numeric code that maps onto an irregular range of times. We will create `JWAPTibble` to correlate the time code to the middle value of the time range as minutes past midnight (i.e. 1:15am would be 75 minutes past midnight)
 
@@ -149,7 +149,7 @@ JWAPTibble
 
 `JWAPTibble` is now ready to help us map JWAP codes to a proper time value.
 
-## `JWDPTibble`
+## 5. `JWDPTibble`
 
 Unfortunately JWDP has different time codes and ranges than JWAP, so the above process will need to be repeated to create `JWDPTibble`
 
@@ -166,7 +166,7 @@ JWDPTibble
 
 `JWDPTibble` is now ready to help us map JWDP codes to a proper time value.
 
-## Single Year Query Function `QCensus()`
+## 6. Single Year Query Function `QCensus()`
 
 `QCensus()` will query the API and allow user to specify:
 
@@ -231,18 +231,6 @@ QCensus <- function (year = 2022,
                    "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", 
                    "38", "39", "40", "41", "42", "44", "45", "46", "47", "48", "49", "50", "51", "53", "54", "55", "56", "*")
   
-  # Add corresponding names.  This may or may not be used later.  
-  names(ValidDivisions) <- c("New England", "Middle Atlantic", "East North Central", "West North Central", 
-                             "South Atlantic", "East South Central", "West South Central", "Mountain", "Pacific", "All")
-  names(ValidRegions) <- c("Northeast", "Midwest", "South", "West", "All")
-  names(ValidStates) <- c("Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", 
-                          "District of Columbia", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", 
-                          "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", 
-                          "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", 
-                          "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", 
-                          "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", 
-                          "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming", "All")
-  
   if (geoLevel == "region" & !(geoSubset %in% ValidRegions)) { # check if geoSubset matches valid regions
     stop("Invalid region code")} 
   if (geoLevel == "division" & !(geoSubset %in% ValidDivisions)) { # check if geoSubset matches valid divisions
@@ -285,8 +273,6 @@ QCensus <- function (year = 2022,
   
   QCensusParsed[[geoLevel]] <- factor(QCensusParsed[[geoLevel]]) # convert appropriate geoLevel to a factor
 
-  # Consider setting factor labels for catVars and/or geoSubset levels if time allows. 
-  
   class(QCensusParsed) <- c("census", class(QCensusParsed)) # adds class "census" to the tibble output
   
   return(QCensusParsed)
@@ -294,6 +280,27 @@ QCensus <- function (year = 2022,
 ```
 
 Let's test some uses of `QCensus()`
+
+First test some error use cases:
+
+```{r}
+#| error: true # allows HTML to render despite error
+QCensus(year = 2003)
+```
+```{r}
+#| error: true # allows HTML to render despite error
+QCensus(numVars = "ERRORINPUT")
+```
+```{r}
+#| error: true # allows HTML to render despite error
+QCensus(numVars = "PWGTP")
+```
+```{r}
+#| error: true # allows HTML to render despite error
+QCensus(catVars = NULL)
+```
+
+Now test some correct use cases:
 
 ```{r}
 system.time(print(QCensus())) # running defaults
@@ -319,7 +326,7 @@ Runtime is manageable but increases with the size of the query (per geoLevel and
 
 All tests of `QCensus()` are successful.
 
-## Multi-Year Query Function `QMultiCensus()`
+## 7. Multi-Year Query Function `QMultiCensus()`
 
 `QMultiCensus()` will build on `QCensus()` to query multiple years of data.
 
@@ -372,7 +379,7 @@ remove(RunTest) # delete temp variable
 
 All tests of `QMultiCensus()` are successful.
 
-## `summary()` for Census Data
+## 8. `summary()` for Census Data
 
 The "census" class has been added to the tibble returned by `QCensus()` above. This also carries through to `QMultiCensus`
 
@@ -380,7 +387,7 @@ We will write our own function to direct how `summary()` is applied to "census" 
 
 ```{r}
 summary.census <- function(CensusTibble, 
-                           numVars = c("AGEP", "GASP", "GRPIP", "JWMNP", "JWAP"), # by default includes applicable numeric variables.  excludes PWGTP, JDAP, and year
+                           numVars = c("AGEP", "GASP", "GRPIP", "JWMNP", "JWAP"), # by default includes applicable numeric variables.  excludes PWGTP, JWDP, and year
                            ## Note:  JWAP was deliberately included so that it could be analyzed in the Data Investigation section
                            catVars = c("FER", "HHL", "SCH", "SCHL", "SEX", "region", "division", "state")){ # by default includes all possible categorical variables (also geoLevel if the tibble includes multiple SubSets)
   
@@ -417,7 +424,7 @@ summary(QCensus(year = 2018, numVars = c("AGEP", "JWDP", "JWAP", "GRPIP"), catVa
 
 All tests of `summary()` are successful.
 
-## `plot()` for Census Data
+## 9. `plot()` for Census Data
 
 We will write our own function to direct how `plot()` is applied to "census" objects
 
@@ -457,31 +464,35 @@ plot(QMultiCensus(CensusYears = c(2021:2022), numVars = "GASP", catVars = "HHL",
 
 All tests of `plot()` are successful.
 
-## Data Investigation
+## 10. Data Investigation
 
 Let's explore the relationship between Job Arrival Time (JWAP) and School Enrollment (SCH).
 
 To begin, we will use `QMultiCensus()` to grab census data from 2010 to 2022 (excluding 2020). We will consider both Rhode Island (a predominantly urban state) and South Dakota (a heavy farming state) to see if any contrast is apparent in the data.
 
 ```{r}
-RIData <- QMultiCensus(CensusYears = 2010:2022, numVars = "JWAP", catVars = "SCH", geoLevel = "state", geoSubset = "44")
+RIData <- QMultiCensus(CensusYears = 2010:2022, numVars = "JWAP", catVars = "SCH", geoLevel = "state", geoSubset = "44") # 44 is Rhode Island
 ```
 
 ```{r}
-SDData <- QMultiCensus(CensusYears = 2010:2022, numVars = "JWAP", catVars = "SCH", geoLevel = "state", geoSubset = "46")
+SDData <- QMultiCensus(CensusYears = 2010:2022, numVars = "JWAP", catVars = "SCH", geoLevel = "state", geoSubset = "46") # 46 is South Dakota
 ```
 
 Next we use `plot()` on our census data to create box plots. Titles, labels, and subtitles will be amended to be more descriptive of the dataset and specific variable details.
 
 ```{r}
+#| warning: false # hiding warnings/messages related to overwrite of the labels
+#| message: false
 plot(RIData, numVar = "JWAP", catVar = "SCH") +
   labs(x = "School Enrollment", y = "Job Arrival Time", title = "Job Arrival Time by School Enrollment", subtitle = "Rhode Island 2010-2022 (excluding 2020)") +
-  scale_fill_discrete(name = "School Enrollment", labels = c("1" = "No w/in 3 mo", "2" = "Yes, Public", "3" = "Yes, Private")) +
+  scale_fill_discrete(name = "School Enrollment", labels = c("1" = "No w/in 3 mo", "2" = "Yes, Public", "3" = "Yes, Private")) + # modifying factor level labels
   scale_x_discrete(name = "School Enrollment") +
-  theme(plot.subtitle = element_text(hjust = 0.5))
+  theme(plot.subtitle = element_text(hjust = 0.5)) # Centering subtitle
 ```
 
 ```{r}
+#| warning: false # hiding warnings/messages related to overwrite of the labels
+#| message: false
 plot(SDData, numVar = "JWAP", catVar = "SCH") +
   labs(x = "School Enrollment", y = "Job Arrival Time", title = "Job Arrival Time by School Enrollment", subtitle = "South Dakota 2010-2022 (excluding 2020)") +
   scale_fill_discrete(name = "School Enrollment", labels = c("1" = "No w/in 3 mo", "2" = "Yes, Public", "3" = "Yes, Private")) +
@@ -521,10 +532,12 @@ print(SDNonStudentsSD <- summary(filter(SDData, SCH == 1), numVars = "JWAP", cat
 
 Expanding on the prior observations with statistical results:
 
-1.  Job arrival time is later in the day for current students vs non-students.  For current students, the mean job arrival time is 10:41 am (641 minutes after midnight). For non-students, the mean job arrival time is more than two hours earlier at 8:36 am (516 minutes after midnight).  This may be due to many students employed in after-school jobs, which would start later in the day.
+The following observations draw on combined PUMS data for Rhode Island and South Dakota across survey years 2010 through 2022 (excluding 2020, which the Census Bureau did not release due to the pandemic). Observations 1 and 2 pool both states; observation 3 contrasts them.
 
-2.  Job arrival time has more variation for current students vs non-students.  For current students, the standard deviation of job arrival time is 257 minutes.  For non-students, the standard deviation of job arrival time is 196 minutes.  This may be due to students working irregular part-time hours to accommodate their school schedules.
+1.  Current students arrive at work later in the day than non-students. The weighted mean arrival time is 10:41 a.m. (`r round(CombinedMeanStudents)` minutes after midnight) for current students, compared to 8:36 a.m. (`r round(CombinedMeanNonStudents)` minutes) for non-students — a difference of more than two hours. A plausible explanation is that many students work after-school jobs, which start later in the day.
 
-3.  Job arrival time among non-students is earlier in the day for SD compared to RI.  For RI, the mean job arrival time among non-students is 8:47 am (527 minutes after midnight) with a standard deviation of 202 minutes.  For SD, the mean job arrival time among non-students is 8:23 am (503 minutes after midnight) with a standard deviation of 189 minutes.  This difference may be due to a difference in job types between SD and RI.  SD is a heavy farming state and would have more agricultural skewed jobs that start before sunrise.  In contrast, RI is a very urban state and may skew more towards office and service jobs that don't need to start as early in the day.
+2.  Arrival time is more variable for current students than non-students. The weighted standard deviation is `r round(CombinedSDStudents)` minutes for students versus `r round(CombinedSDNonStudents)` minutes for non-students. This may reflect students working irregular part-time hours scheduled around their classes, producing a wider spread of start times.
+
+3.  Among non-students, arrival time is earlier in South Dakota than in Rhode Island. The weighted mean is 8:23 a.m. (`r round(SDNonStudentsMean)` minutes) in South Dakota versus 8:47 a.m. (`r round(RINonStudentsMean)` minutes) in Rhode Island, with standard deviations of `r round(SDNonStudentsSD)` and `r round(RINonStudentsSD)` minutes respectively. One possible explanation is a difference in the dominant job types between the two states: South Dakota is largely rural/agricultural and farm work tends to start early. Rhode Island is more urban and may skew toward office and service jobs with later start times. 
 
 Evaluation of statistical significance of the above observed differences is recommended, though beyond the scope of this analysis.

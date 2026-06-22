@@ -146,8 +146,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <section id="test-query-of-api" class="level2">
-<h2 class="anchored" data-anchor-id="test-query-of-api">Test Query of API</h2>
-<p>To start, we’ll do a test query of the API and review the format of the data</p>
+<h2 class="anchored" data-anchor-id="test-query-of-api">1. Test Query of API</h2>
+<p>To start, we’ll do a test query of the API and review the format of the PUMS Census data</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>TestData <span class="ot">&lt;-</span> <span class="fu">GET</span>(<span class="fu">paste0</span>(<span class="st">"https://api.census.gov/data/2022/acs/acs1/pums?get=SEX,PWGTP,AGEP&amp;for=state:06&amp;SCHL=24&amp;key="</span>, APIKey))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
@@ -157,11 +157,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>     [,1]  [,2]    [,3]   [,4]   [,5]   
 [1,] "SEX" "PWGTP" "AGEP" "SCHL" "state"
-[2,] "2"   "74"    "67"   "24"   "06"   
-[3,] "2"   "90"    "60"   "24"   "06"   
-[4,] "2"   "60"    "31"   "24"   "06"   
-[5,] "1"   "68"    "41"   "24"   "06"   
-[6,] "1"   "57"    "70"   "24"   "06"   </code></pre>
+[2,] "2"   "23"    "84"   "24"   "06"   
+[3,] "2"   "60"    "84"   "24"   "06"   
+[4,] "2"   "70"    "86"   "24"   "06"   
+[5,] "2"   "21"    "84"   "24"   "06"   
+[6,] "2"   "5"     "60"   "24"   "06"   </code></pre>
 </div>
 </div>
 <p>Looks like we get a data frame of all characters. Also the first row contains the variable names. We need to:</p>
@@ -182,19 +182,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 6 × 5
   SEX   PWGTP  AGEP SCHL  state
   &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;fct&gt; &lt;fct&gt;
-1 2        74    67 24    06   
-2 2        90    60 24    06   
-3 2        60    31 24    06   
-4 1        68    41 24    06   
-5 1        57    70 24    06   
-6 1        83    71 24    06   </code></pre>
+1 2        23    84 24    06   
+2 2        60    84 24    06   
+3 2        70    86 24    06   
+4 2        21    84 24    06   
+5 2         5    60 24    06   
+6 2        18    60 24    06   </code></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(TestCleaned)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>tibble [6,336 × 5] (S3: tbl_df/tbl/data.frame)
- $ SEX  : Factor w/ 2 levels "1","2": 2 2 2 1 1 1 1 1 2 2 ...
- $ PWGTP: num [1:6336] 74 90 60 68 57 83 74 67 75 54 ...
- $ AGEP : num [1:6336] 67 60 31 41 70 71 88 36 54 54 ...
+ $ SEX  : Factor w/ 2 levels "1","2": 2 2 2 2 2 2 1 1 1 2 ...
+ $ PWGTP: num [1:6336] 23 60 70 21 5 18 57 17 47 52 ...
+ $ AGEP : num [1:6336] 84 84 86 84 60 60 35 32 80 49 ...
  $ SCHL : Factor w/ 1 level "24": 1 1 1 1 1 1 1 1 1 1 ...
  $ state: Factor w/ 1 level "06": 1 1 1 1 1 1 1 1 1 1 ...</code></pre>
 </div>
@@ -202,7 +202,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Looks good. We’ll work on automating this process later.</p>
 </section>
 <section id="helper-function-intotibble" class="level2">
-<h2 class="anchored" data-anchor-id="helper-function-intotibble">Helper Function <code>IntoTibble()</code></h2>
+<h2 class="anchored" data-anchor-id="helper-function-intotibble">2. Helper Function <code>IntoTibble()</code></h2>
 <p><code>IntoTibble()</code> function is designed to take the census data returned from the <code>GET()</code> and convert into a tibble similar to the steps above</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>IntoTibble <span class="ot">&lt;-</span> <span class="cf">function</span> (CensusGet){ <span class="co"># input is the get() data from the census API</span></span>
@@ -217,18 +217,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 6 × 5
   SEX   PWGTP AGEP  SCHL  state
   &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;
-1 2     74    67    24    06   
-2 2     90    60    24    06   
-3 2     60    31    24    06   
-4 1     68    41    24    06   
-5 1     57    70    24    06   
-6 1     83    71    24    06   </code></pre>
+1 2     23    84    24    06   
+2 2     60    84    24    06   
+3 2     70    86    24    06   
+4 2     21    84    24    06   
+5 2     5     60    24    06   
+6 2     18    60    24    06   </code></pre>
 </div>
 </div>
 <p>Test of <code>IntoTibble()</code> function is successful.</p>
 </section>
 <section id="time-range-string-conversion-function-stringtotime" class="level2">
-<h2 class="anchored" data-anchor-id="time-range-string-conversion-function-stringtotime">Time Range String Conversion Function <code>StringToTime()</code></h2>
+<h2 class="anchored" data-anchor-id="time-range-string-conversion-function-stringtotime">3. Time Range String Conversion Function <code>StringToTime()</code></h2>
 <p>JWAP and JWDP both associate time codes with character strings representing a time range. <code>StringToTime()</code> will convert the character string into the middle value of the time range as minutes past midnight (i.e.&nbsp;1:15am would be 75 minutes past midnight)</p>
 <p>Example character strings: “9:55 p.m. to 9:59 p.m.” “11:00 p.m. to 11:04 p.m.” “4:10 a.m. to 4:14 a.m.”</p>
 <p>If we split the string by both ” ” and “:”, we’ll get a vector of 7 predictable elements:</p>
@@ -274,7 +274,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Test of <code>StringToTime()</code> is successful.</p>
 </section>
 <section id="jwaptibble" class="level2">
-<h2 class="anchored" data-anchor-id="jwaptibble"><code>JWAPTibble</code></h2>
+<h2 class="anchored" data-anchor-id="jwaptibble">4. <code>JWAPTibble</code></h2>
 <p>JWAP is a numeric code that maps onto an irregular range of times. We will create <code>JWAPTibble</code> to correlate the time code to the middle value of the time range as minutes past midnight (i.e.&nbsp;1:15am would be 75 minutes past midnight)</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>JWAP <span class="ot">&lt;-</span> <span class="fu">fromJSON</span>(<span class="st">"Project1DataFiles/JWAP.json"</span>) <span class="co"># this JWAP descriptor is from https://api.census.gov/data/2022/acs/acs1/pums/variables/JWAP.json</span></span>
@@ -321,7 +321,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><code>JWAPTibble</code> is now ready to help us map JWAP codes to a proper time value.</p>
 </section>
 <section id="jwdptibble" class="level2">
-<h2 class="anchored" data-anchor-id="jwdptibble"><code>JWDPTibble</code></h2>
+<h2 class="anchored" data-anchor-id="jwdptibble">5. <code>JWDPTibble</code></h2>
 <p>Unfortunately JWDP has different time codes and ranges than JWAP, so the above process will need to be repeated to create <code>JWDPTibble</code></p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>JWDP <span class="ot">&lt;-</span> <span class="fu">fromJSON</span>(<span class="st">"Project1DataFiles/JWDP.json"</span>) <span class="co"># this JWDP descriptor is from https://api.census.gov/data/2022/acs/acs1/pums/variables/JWDP.json</span></span>
@@ -352,7 +352,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><code>JWDPTibble</code> is now ready to help us map JWDP codes to a proper time value.</p>
 </section>
 <section id="single-year-query-function-qcensus" class="level2">
-<h2 class="anchored" data-anchor-id="single-year-query-function-qcensus">Single Year Query Function <code>QCensus()</code></h2>
+<h2 class="anchored" data-anchor-id="single-year-query-function-qcensus">6. Single Year Query Function <code>QCensus()</code></h2>
 <p><code>QCensus()</code> will query the API and allow user to specify:</p>
 <ul>
 <li><p>Year of survey</p></li>
@@ -413,93 +413,109 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb25-42"><a href="#cb25-42" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"21"</span>, <span class="st">"22"</span>, <span class="st">"23"</span>, <span class="st">"24"</span>, <span class="st">"25"</span>, <span class="st">"26"</span>, <span class="st">"27"</span>, <span class="st">"28"</span>, <span class="st">"29"</span>, <span class="st">"30"</span>, <span class="st">"31"</span>, <span class="st">"32"</span>, <span class="st">"33"</span>, <span class="st">"34"</span>, <span class="st">"35"</span>, <span class="st">"36"</span>, <span class="st">"37"</span>, </span>
 <span id="cb25-43"><a href="#cb25-43" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"38"</span>, <span class="st">"39"</span>, <span class="st">"40"</span>, <span class="st">"41"</span>, <span class="st">"42"</span>, <span class="st">"44"</span>, <span class="st">"45"</span>, <span class="st">"46"</span>, <span class="st">"47"</span>, <span class="st">"48"</span>, <span class="st">"49"</span>, <span class="st">"50"</span>, <span class="st">"51"</span>, <span class="st">"53"</span>, <span class="st">"54"</span>, <span class="st">"55"</span>, <span class="st">"56"</span>, <span class="st">"*"</span>)</span>
 <span id="cb25-44"><a href="#cb25-44" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-45"><a href="#cb25-45" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add corresponding names.  This may or may not be used later.  </span></span>
-<span id="cb25-46"><a href="#cb25-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(ValidDivisions) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"New England"</span>, <span class="st">"Middle Atlantic"</span>, <span class="st">"East North Central"</span>, <span class="st">"West North Central"</span>, </span>
-<span id="cb25-47"><a href="#cb25-47" aria-hidden="true" tabindex="-1"></a>                             <span class="st">"South Atlantic"</span>, <span class="st">"East South Central"</span>, <span class="st">"West South Central"</span>, <span class="st">"Mountain"</span>, <span class="st">"Pacific"</span>, <span class="st">"All"</span>)</span>
-<span id="cb25-48"><a href="#cb25-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(ValidRegions) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Northeast"</span>, <span class="st">"Midwest"</span>, <span class="st">"South"</span>, <span class="st">"West"</span>, <span class="st">"All"</span>)</span>
-<span id="cb25-49"><a href="#cb25-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(ValidStates) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Alabama"</span>, <span class="st">"Alaska"</span>, <span class="st">"Arizona"</span>, <span class="st">"Arkansas"</span>, <span class="st">"California"</span>, <span class="st">"Colorado"</span>, <span class="st">"Connecticut"</span>, <span class="st">"Delaware"</span>, </span>
-<span id="cb25-50"><a href="#cb25-50" aria-hidden="true" tabindex="-1"></a>                          <span class="st">"District of Columbia"</span>, <span class="st">"Florida"</span>, <span class="st">"Georgia"</span>, <span class="st">"Hawaii"</span>, <span class="st">"Idaho"</span>, <span class="st">"Illinois"</span>, <span class="st">"Indiana"</span>, <span class="st">"Iowa"</span>, </span>
-<span id="cb25-51"><a href="#cb25-51" aria-hidden="true" tabindex="-1"></a>                          <span class="st">"Kansas"</span>, <span class="st">"Kentucky"</span>, <span class="st">"Louisiana"</span>, <span class="st">"Maine"</span>, <span class="st">"Maryland"</span>, <span class="st">"Massachusetts"</span>, <span class="st">"Michigan"</span>, <span class="st">"Minnesota"</span>, </span>
-<span id="cb25-52"><a href="#cb25-52" aria-hidden="true" tabindex="-1"></a>                          <span class="st">"Mississippi"</span>, <span class="st">"Missouri"</span>, <span class="st">"Montana"</span>, <span class="st">"Nebraska"</span>, <span class="st">"Nevada"</span>, <span class="st">"New Hampshire"</span>, <span class="st">"New Jersey"</span>, </span>
-<span id="cb25-53"><a href="#cb25-53" aria-hidden="true" tabindex="-1"></a>                          <span class="st">"New Mexico"</span>, <span class="st">"New York"</span>, <span class="st">"North Carolina"</span>, <span class="st">"North Dakota"</span>, <span class="st">"Ohio"</span>, <span class="st">"Oklahoma"</span>, <span class="st">"Oregon"</span>, </span>
-<span id="cb25-54"><a href="#cb25-54" aria-hidden="true" tabindex="-1"></a>                          <span class="st">"Pennsylvania"</span>, <span class="st">"Rhode Island"</span>, <span class="st">"South Carolina"</span>, <span class="st">"South Dakota"</span>, <span class="st">"Tennessee"</span>, <span class="st">"Texas"</span>, <span class="st">"Utah"</span>, </span>
-<span id="cb25-55"><a href="#cb25-55" aria-hidden="true" tabindex="-1"></a>                          <span class="st">"Vermont"</span>, <span class="st">"Virginia"</span>, <span class="st">"Washington"</span>, <span class="st">"West Virginia"</span>, <span class="st">"Wisconsin"</span>, <span class="st">"Wyoming"</span>, <span class="st">"All"</span>)</span>
+<span id="cb25-45"><a href="#cb25-45" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (geoLevel <span class="sc">==</span> <span class="st">"region"</span> <span class="sc">&amp;</span> <span class="sc">!</span>(geoSubset <span class="sc">%in%</span> ValidRegions)) { <span class="co"># check if geoSubset matches valid regions</span></span>
+<span id="cb25-46"><a href="#cb25-46" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid region code"</span>)} </span>
+<span id="cb25-47"><a href="#cb25-47" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (geoLevel <span class="sc">==</span> <span class="st">"division"</span> <span class="sc">&amp;</span> <span class="sc">!</span>(geoSubset <span class="sc">%in%</span> ValidDivisions)) { <span class="co"># check if geoSubset matches valid divisions</span></span>
+<span id="cb25-48"><a href="#cb25-48" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid division code"</span>)} </span>
+<span id="cb25-49"><a href="#cb25-49" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (geoLevel <span class="sc">==</span> <span class="st">"state"</span> <span class="sc">&amp;</span> <span class="sc">!</span>(geoSubset <span class="sc">%in%</span> ValidStates)) { <span class="co"># check if geoSubset matches valid states</span></span>
+<span id="cb25-50"><a href="#cb25-50" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid state code"</span>)} </span>
+<span id="cb25-51"><a href="#cb25-51" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb25-52"><a href="#cb25-52" aria-hidden="true" tabindex="-1"></a>  APIURL <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://api.census.gov/data/"</span>, year, <span class="st">"/acs/acs1/pums?get=PWGTP,"</span>) <span class="co"># begins the URL including year and PWGTP</span></span>
+<span id="cb25-53"><a href="#cb25-53" aria-hidden="true" tabindex="-1"></a>  APIURL <span class="ot">&lt;-</span> <span class="fu">paste0</span>(APIURL, <span class="fu">paste</span>(numVars, <span class="at">collapse =</span> <span class="st">","</span>), <span class="st">","</span>, <span class="fu">paste</span>(catVars, <span class="at">collapse =</span> <span class="st">","</span>)) <span class="co"># adds numeric variables and categorical variables</span></span>
+<span id="cb25-54"><a href="#cb25-54" aria-hidden="true" tabindex="-1"></a>  APIURL <span class="ot">&lt;-</span> <span class="fu">paste0</span>(APIURL, <span class="st">"&amp;for="</span>, geoLevel, <span class="st">":"</span>, geoSubset) <span class="co"># adds geoLevel and subset</span></span>
+<span id="cb25-55"><a href="#cb25-55" aria-hidden="true" tabindex="-1"></a>  APIURL <span class="ot">&lt;-</span> <span class="fu">paste0</span>(APIURL, <span class="st">"&amp;key="</span>, APIKey) <span class="co"># adds API key</span></span>
 <span id="cb25-56"><a href="#cb25-56" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-57"><a href="#cb25-57" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (geoLevel <span class="sc">==</span> <span class="st">"region"</span> <span class="sc">&amp;</span> <span class="sc">!</span>(geoSubset <span class="sc">%in%</span> ValidRegions)) { <span class="co"># check if geoSubset matches valid regions</span></span>
-<span id="cb25-58"><a href="#cb25-58" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid region code"</span>)} </span>
-<span id="cb25-59"><a href="#cb25-59" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (geoLevel <span class="sc">==</span> <span class="st">"division"</span> <span class="sc">&amp;</span> <span class="sc">!</span>(geoSubset <span class="sc">%in%</span> ValidDivisions)) { <span class="co"># check if geoSubset matches valid divisions</span></span>
-<span id="cb25-60"><a href="#cb25-60" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid division code"</span>)} </span>
-<span id="cb25-61"><a href="#cb25-61" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (geoLevel <span class="sc">==</span> <span class="st">"state"</span> <span class="sc">&amp;</span> <span class="sc">!</span>(geoSubset <span class="sc">%in%</span> ValidStates)) { <span class="co"># check if geoSubset matches valid states</span></span>
-<span id="cb25-62"><a href="#cb25-62" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid state code"</span>)} </span>
-<span id="cb25-63"><a href="#cb25-63" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-64"><a href="#cb25-64" aria-hidden="true" tabindex="-1"></a>  APIURL <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://api.census.gov/data/"</span>, year, <span class="st">"/acs/acs1/pums?get=PWGTP,"</span>) <span class="co"># begins the URL including year and PWGTP</span></span>
-<span id="cb25-65"><a href="#cb25-65" aria-hidden="true" tabindex="-1"></a>  APIURL <span class="ot">&lt;-</span> <span class="fu">paste0</span>(APIURL, <span class="fu">paste</span>(numVars, <span class="at">collapse =</span> <span class="st">","</span>), <span class="st">","</span>, <span class="fu">paste</span>(catVars, <span class="at">collapse =</span> <span class="st">","</span>)) <span class="co"># adds numeric variables and categorical variables</span></span>
-<span id="cb25-66"><a href="#cb25-66" aria-hidden="true" tabindex="-1"></a>  APIURL <span class="ot">&lt;-</span> <span class="fu">paste0</span>(APIURL, <span class="st">"&amp;for="</span>, geoLevel, <span class="st">":"</span>, geoSubset) <span class="co"># adds geoLevel and subset</span></span>
-<span id="cb25-67"><a href="#cb25-67" aria-hidden="true" tabindex="-1"></a>  APIURL <span class="ot">&lt;-</span> <span class="fu">paste0</span>(APIURL, <span class="st">"&amp;key="</span>, APIKey) <span class="co"># adds API key</span></span>
-<span id="cb25-68"><a href="#cb25-68" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-69"><a href="#cb25-69" aria-hidden="true" tabindex="-1"></a>  QCensusParsed <span class="ot">&lt;-</span> <span class="fu">IntoTibble</span>(<span class="fu">GET</span>(APIURL)) <span class="co"># Gets tibble from URL</span></span>
-<span id="cb25-70"><a href="#cb25-70" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-71"><a href="#cb25-71" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">c</span>(<span class="st">"PWGTP"</span>, numVars)) { <span class="co"># cycle through all relevant numeric variables, adding PWGTP back in</span></span>
-<span id="cb25-72"><a href="#cb25-72" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (i <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"PWGTP"</span>, <span class="st">"AGEP"</span>, <span class="st">"GASP"</span>, <span class="st">"GRPIP"</span>, <span class="st">"JWMNP"</span>)) { <span class="co"># these variables are pure numbers</span></span>
-<span id="cb25-73"><a href="#cb25-73" aria-hidden="true" tabindex="-1"></a>      QCensusParsed[[i]] <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(QCensusParsed[[i]]) <span class="co"># convert to numeric</span></span>
-<span id="cb25-74"><a href="#cb25-74" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb25-75"><a href="#cb25-75" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (i <span class="sc">==</span> <span class="st">"JWAP"</span>) { <span class="co"># converting JWAP times</span></span>
-<span id="cb25-76"><a href="#cb25-76" aria-hidden="true" tabindex="-1"></a>      QCensusParsed <span class="ot">&lt;-</span> QCensusParsed <span class="sc">|&gt;</span></span>
-<span id="cb25-77"><a href="#cb25-77" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">JWAP =</span> <span class="fu">as.numeric</span>(JWAP)) <span class="sc">|&gt;</span> <span class="co"># convert JWAP to numeric to match JWAPTibble</span></span>
-<span id="cb25-78"><a href="#cb25-78" aria-hidden="true" tabindex="-1"></a>        <span class="fu">left_join</span>(JWAPTibble, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"JWAP"</span> <span class="ot">=</span> <span class="st">"value"</span>)) <span class="sc">|&gt;</span> <span class="co"># join with JWAPTibble, keeping the original QCensusParsed and correlating the codes</span></span>
-<span id="cb25-79"><a href="#cb25-79" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">JWAP =</span> time) <span class="sc">|&gt;</span> <span class="co"># we can now overwrite JWAP in QCensusParsed with the proper time values</span></span>
-<span id="cb25-80"><a href="#cb25-80" aria-hidden="true" tabindex="-1"></a>        <span class="fu">select</span>(<span class="sc">!</span><span class="fu">c</span>(string, time)) <span class="co"># remove unused string and time variables</span></span>
-<span id="cb25-81"><a href="#cb25-81" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb25-82"><a href="#cb25-82" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (i <span class="sc">==</span> <span class="st">"JWDP"</span>) { <span class="co">#converting JWDP times, same as above</span></span>
-<span id="cb25-83"><a href="#cb25-83" aria-hidden="true" tabindex="-1"></a>      QCensusParsed <span class="ot">&lt;-</span> QCensusParsed <span class="sc">|&gt;</span></span>
-<span id="cb25-84"><a href="#cb25-84" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">JWDP =</span> <span class="fu">as.numeric</span>(JWDP)) <span class="sc">|&gt;</span></span>
-<span id="cb25-85"><a href="#cb25-85" aria-hidden="true" tabindex="-1"></a>        <span class="fu">left_join</span>(JWDPTibble, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"JWDP"</span> <span class="ot">=</span> <span class="st">"value"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb25-86"><a href="#cb25-86" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">JWDP =</span> time) <span class="sc">|&gt;</span></span>
-<span id="cb25-87"><a href="#cb25-87" aria-hidden="true" tabindex="-1"></a>        <span class="fu">select</span>(<span class="sc">!</span><span class="fu">c</span>(string, time))      </span>
-<span id="cb25-88"><a href="#cb25-88" aria-hidden="true" tabindex="-1"></a>    }   </span>
-<span id="cb25-89"><a href="#cb25-89" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb25-90"><a href="#cb25-90" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-91"><a href="#cb25-91" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> catVars){ <span class="co"># cycle through all relevant categorical variables in catVars</span></span>
-<span id="cb25-92"><a href="#cb25-92" aria-hidden="true" tabindex="-1"></a>    <span class="co"># factor levels do not order as desired for plotting later, so we have to force it here</span></span>
-<span id="cb25-93"><a href="#cb25-93" aria-hidden="true" tabindex="-1"></a>    numLevels <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="fu">sort</span>(<span class="fu">as.numeric</span>(<span class="fu">unique</span>(QCensusParsed[[i]])))) <span class="co"># create a vector of the categorical factor levels as characters but sorted numerically</span></span>
-<span id="cb25-94"><a href="#cb25-94" aria-hidden="true" tabindex="-1"></a>    QCensusParsed[[i]] <span class="ot">&lt;-</span> <span class="fu">factor</span>(QCensusParsed[[i]], <span class="at">levels =</span> numLevels) <span class="co"># convert to factor and apply levels in the correct order per numLevels</span></span>
-<span id="cb25-95"><a href="#cb25-95" aria-hidden="true" tabindex="-1"></a>  } </span>
-<span id="cb25-96"><a href="#cb25-96" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-97"><a href="#cb25-97" aria-hidden="true" tabindex="-1"></a>  QCensusParsed[[geoLevel]] <span class="ot">&lt;-</span> <span class="fu">factor</span>(QCensusParsed[[geoLevel]]) <span class="co"># convert appropriate geoLevel to a factor</span></span>
-<span id="cb25-98"><a href="#cb25-98" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-99"><a href="#cb25-99" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Consider setting factor labels for catVars and/or geoSubset levels if time allows. </span></span>
-<span id="cb25-100"><a href="#cb25-100" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-101"><a href="#cb25-101" aria-hidden="true" tabindex="-1"></a>  <span class="fu">class</span>(QCensusParsed) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"census"</span>, <span class="fu">class</span>(QCensusParsed)) <span class="co"># adds class "census" to the tibble output</span></span>
-<span id="cb25-102"><a href="#cb25-102" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-103"><a href="#cb25-103" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(QCensusParsed)</span>
-<span id="cb25-104"><a href="#cb25-104" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb25-57"><a href="#cb25-57" aria-hidden="true" tabindex="-1"></a>  QCensusParsed <span class="ot">&lt;-</span> <span class="fu">IntoTibble</span>(<span class="fu">GET</span>(APIURL)) <span class="co"># Gets tibble from URL</span></span>
+<span id="cb25-58"><a href="#cb25-58" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb25-59"><a href="#cb25-59" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">c</span>(<span class="st">"PWGTP"</span>, numVars)) { <span class="co"># cycle through all relevant numeric variables, adding PWGTP back in</span></span>
+<span id="cb25-60"><a href="#cb25-60" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (i <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"PWGTP"</span>, <span class="st">"AGEP"</span>, <span class="st">"GASP"</span>, <span class="st">"GRPIP"</span>, <span class="st">"JWMNP"</span>)) { <span class="co"># these variables are pure numbers</span></span>
+<span id="cb25-61"><a href="#cb25-61" aria-hidden="true" tabindex="-1"></a>      QCensusParsed[[i]] <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(QCensusParsed[[i]]) <span class="co"># convert to numeric</span></span>
+<span id="cb25-62"><a href="#cb25-62" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb25-63"><a href="#cb25-63" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (i <span class="sc">==</span> <span class="st">"JWAP"</span>) { <span class="co"># converting JWAP times</span></span>
+<span id="cb25-64"><a href="#cb25-64" aria-hidden="true" tabindex="-1"></a>      QCensusParsed <span class="ot">&lt;-</span> QCensusParsed <span class="sc">|&gt;</span></span>
+<span id="cb25-65"><a href="#cb25-65" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">JWAP =</span> <span class="fu">as.numeric</span>(JWAP)) <span class="sc">|&gt;</span> <span class="co"># convert JWAP to numeric to match JWAPTibble</span></span>
+<span id="cb25-66"><a href="#cb25-66" aria-hidden="true" tabindex="-1"></a>        <span class="fu">left_join</span>(JWAPTibble, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"JWAP"</span> <span class="ot">=</span> <span class="st">"value"</span>)) <span class="sc">|&gt;</span> <span class="co"># join with JWAPTibble, keeping the original QCensusParsed and correlating the codes</span></span>
+<span id="cb25-67"><a href="#cb25-67" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">JWAP =</span> time) <span class="sc">|&gt;</span> <span class="co"># we can now overwrite JWAP in QCensusParsed with the proper time values</span></span>
+<span id="cb25-68"><a href="#cb25-68" aria-hidden="true" tabindex="-1"></a>        <span class="fu">select</span>(<span class="sc">!</span><span class="fu">c</span>(string, time)) <span class="co"># remove unused string and time variables</span></span>
+<span id="cb25-69"><a href="#cb25-69" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb25-70"><a href="#cb25-70" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (i <span class="sc">==</span> <span class="st">"JWDP"</span>) { <span class="co">#converting JWDP times, same as above</span></span>
+<span id="cb25-71"><a href="#cb25-71" aria-hidden="true" tabindex="-1"></a>      QCensusParsed <span class="ot">&lt;-</span> QCensusParsed <span class="sc">|&gt;</span></span>
+<span id="cb25-72"><a href="#cb25-72" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">JWDP =</span> <span class="fu">as.numeric</span>(JWDP)) <span class="sc">|&gt;</span></span>
+<span id="cb25-73"><a href="#cb25-73" aria-hidden="true" tabindex="-1"></a>        <span class="fu">left_join</span>(JWDPTibble, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"JWDP"</span> <span class="ot">=</span> <span class="st">"value"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb25-74"><a href="#cb25-74" aria-hidden="true" tabindex="-1"></a>        <span class="fu">mutate</span>(<span class="at">JWDP =</span> time) <span class="sc">|&gt;</span></span>
+<span id="cb25-75"><a href="#cb25-75" aria-hidden="true" tabindex="-1"></a>        <span class="fu">select</span>(<span class="sc">!</span><span class="fu">c</span>(string, time))      </span>
+<span id="cb25-76"><a href="#cb25-76" aria-hidden="true" tabindex="-1"></a>    }   </span>
+<span id="cb25-77"><a href="#cb25-77" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb25-78"><a href="#cb25-78" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb25-79"><a href="#cb25-79" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> catVars){ <span class="co"># cycle through all relevant categorical variables in catVars</span></span>
+<span id="cb25-80"><a href="#cb25-80" aria-hidden="true" tabindex="-1"></a>    <span class="co"># factor levels do not order as desired for plotting later, so we have to force it here</span></span>
+<span id="cb25-81"><a href="#cb25-81" aria-hidden="true" tabindex="-1"></a>    numLevels <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="fu">sort</span>(<span class="fu">as.numeric</span>(<span class="fu">unique</span>(QCensusParsed[[i]])))) <span class="co"># create a vector of the categorical factor levels as characters but sorted numerically</span></span>
+<span id="cb25-82"><a href="#cb25-82" aria-hidden="true" tabindex="-1"></a>    QCensusParsed[[i]] <span class="ot">&lt;-</span> <span class="fu">factor</span>(QCensusParsed[[i]], <span class="at">levels =</span> numLevels) <span class="co"># convert to factor and apply levels in the correct order per numLevels</span></span>
+<span id="cb25-83"><a href="#cb25-83" aria-hidden="true" tabindex="-1"></a>  } </span>
+<span id="cb25-84"><a href="#cb25-84" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb25-85"><a href="#cb25-85" aria-hidden="true" tabindex="-1"></a>  QCensusParsed[[geoLevel]] <span class="ot">&lt;-</span> <span class="fu">factor</span>(QCensusParsed[[geoLevel]]) <span class="co"># convert appropriate geoLevel to a factor</span></span>
+<span id="cb25-86"><a href="#cb25-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-87"><a href="#cb25-87" aria-hidden="true" tabindex="-1"></a>  <span class="fu">class</span>(QCensusParsed) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"census"</span>, <span class="fu">class</span>(QCensusParsed)) <span class="co"># adds class "census" to the tibble output</span></span>
+<span id="cb25-88"><a href="#cb25-88" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb25-89"><a href="#cb25-89" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(QCensusParsed)</span>
+<span id="cb25-90"><a href="#cb25-90" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Let’s test some uses of <code>QCensus()</code></p>
+<p>First test some error use cases:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">print</span>(<span class="fu">QCensus</span>())) <span class="co"># running defaults</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">QCensus</span>(<span class="at">year =</span> <span class="dv">2003</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-error">
+<pre><code>Error in `QCensus()`:
+! Invalid year.  Must be an integer from 2010 to 2022, excluding 2020</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">QCensus</span>(<span class="at">numVars =</span> <span class="st">"ERRORINPUT"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-error">
+<pre><code>Error in `QCensus()`:
+! Invalid numeric variable(s).  Valid numeric variables are: PWGTP, AGEP, GASP, GRPIP, JWAP, JWDP, JWMNP.</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">QCensus</span>(<span class="at">numVars =</span> <span class="st">"PWGTP"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-error">
+<pre><code>Error in `QCensus()`:
+! Must specify at least one numeric variable other than PWGTP</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">QCensus</span>(<span class="at">catVars =</span> <span class="cn">NULL</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-error">
+<pre><code>Error in `QCensus()`:
+! Must specify at least one categorical variable</code></pre>
+</div>
+</div>
+<p>Now test some correct use cases:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">print</span>(<span class="fu">QCensus</span>())) <span class="co"># running defaults</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5,962 × 4
    PWGTP  AGEP SEX   state
    &lt;dbl&gt; &lt;dbl&gt; &lt;fct&gt; &lt;fct&gt;
- 1    38    58 1     56   
- 2    25    34 1     56   
- 3   217    52 1     56   
- 4   321    15 1     56   
- 5   101    51 2     56   
- 6    83    57 1     56   
- 7    67    51 1     56   
- 8    10    60 1     56   
- 9     9    61 2     56   
-10    73    41 1     56   
+ 1    25    43 1     56   
+ 2   128    40 1     56   
+ 3   121    18 1     56   
+ 4    24    21 2     56   
+ 5    26    92 2     56   
+ 6    25    19 2     56   
+ 7    91    20 1     56   
+ 8    20    18 2     56   
+ 9   132    85 1     56   
+10    89    20 1     56   
 # ℹ 5,952 more rows</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-   0.11    0.00    0.56 </code></pre>
+   0.06    0.00    0.55 </code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">print</span>(<span class="fu">QCensus</span>(<span class="at">year =</span> <span class="dv">2021</span>, <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>), <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"SCHL"</span>, <span class="st">"SEX"</span>), <span class="at">geoLevel =</span> <span class="st">"state"</span>, <span class="at">geoSubset =</span> <span class="st">"17"</span> ))) <span class="co"># adding some time and categorical variables</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">print</span>(<span class="fu">QCensus</span>(<span class="at">year =</span> <span class="dv">2021</span>, <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>), <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"SCHL"</span>, <span class="st">"SEX"</span>), <span class="at">geoLevel =</span> <span class="st">"state"</span>, <span class="at">geoSubset =</span> <span class="st">"17"</span> ))) <span class="co"># adding some time and categorical variables</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 126,623 × 6
    PWGTP  JWAP  JWDP SCHL  SEX   state
@@ -518,11 +534,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-   1.18    0.03    7.02 </code></pre>
+   1.28    0.10    7.15 </code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">print</span>(<span class="fu">QCensus</span>(<span class="at">year =</span> <span class="dv">2018</span>, <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>, <span class="st">"JWDP"</span>, <span class="st">"JWAP"</span>, <span class="st">"JWMNP"</span>, <span class="st">"GRPIP"</span>), <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"FER"</span>), <span class="at">geoLevel =</span> <span class="st">"division"</span>, <span class="at">geoSubset =</span> <span class="st">"4"</span> ))) <span class="co"># trying a division and some other variables</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">print</span>(<span class="fu">QCensus</span>(<span class="at">year =</span> <span class="dv">2018</span>, <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>, <span class="st">"JWDP"</span>, <span class="st">"JWAP"</span>, <span class="st">"JWMNP"</span>, <span class="st">"GRPIP"</span>), <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"FER"</span>), <span class="at">geoLevel =</span> <span class="st">"division"</span>, <span class="at">geoSubset =</span> <span class="st">"4"</span> ))) <span class="co"># trying a division and some other variables</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 216,441 × 8
    PWGTP  AGEP  JWDP  JWAP JWMNP GRPIP FER   division
@@ -541,58 +557,58 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-   1.95    0.05   14.02 </code></pre>
+   2.09    0.06   14.50 </code></pre>
 </div>
 </div>
 <p>Note: Departure time for work “JWDP” and work arrival time “JWAP” calculations are approximately validated by work travel time “JWMNP”. Calculation is not always exact since JWDP and JWAP assume the middle of the time range reported.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># system.time(BigTest &lt;- QCensus(year = 2015, numVars = c("PWGTP", "AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP"), catVars = c("FER", "HHL", "SCH", "SCHL", "SEX"), geoLevel = "state", geoSubset = "all"))</span></span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="co"># BigTest took ~6 minutes and returned ~3.1 million rows.  Compute time ("user") was 41 sec, so the code is not the bottleneck.  Not going to have this running in the .qmd, but it did work!</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># system.time(BigTest &lt;- QCensus(year = 2015, numVars = c("PWGTP", "AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP"), catVars = c("FER", "HHL", "SCH", "SCHL", "SEX"), geoLevel = "state", geoSubset = "all"))</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a><span class="co"># BigTest took ~6 minutes and returned ~3.1 million rows.  Compute time ("user") was 41 sec, so the code is not the bottleneck.  Not going to have this running in the .qmd, but it did work!</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Runtime is manageable but increases with the size of the query (per geoLevel and geoSubset). Majority of runtime is waiting on the API rather than compute, so code is reasonably optimized. Be wary of setting geoSubset = “all” resulting in runtimes over 5 min.</p>
 <p>All tests of <code>QCensus()</code> are successful.</p>
 </section>
 <section id="multi-year-query-function-qmulticensus" class="level2">
-<h2 class="anchored" data-anchor-id="multi-year-query-function-qmulticensus">Multi-Year Query Function <code>QMultiCensus()</code></h2>
+<h2 class="anchored" data-anchor-id="multi-year-query-function-qmulticensus">7. Multi-Year Query Function <code>QMultiCensus()</code></h2>
 <p><code>QMultiCensus()</code> will build on <code>QCensus()</code> to query multiple years of data.</p>
 <p>The user will specify a valid range of years (in addition to the other <code>QCensus()</code> inputs), and <code>QMultiCensus()</code> will return a single tibble with combined data and a new year variable</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>QMultiCensus <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">CensusYears =</span> <span class="fu">c</span>(<span class="dv">2010</span><span class="sc">:</span><span class="dv">2011</span>), <span class="co"># </span></span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>), </span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"SEX"</span>), </span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">geoLevel =</span> <span class="st">"state"</span>, </span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">geoSubset =</span> <span class="st">"56"</span>, <span class="co"># setting Wyoming as default state</span></span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>                         <span class="at">APIKey =</span> <span class="st">"5a644b1ecc301cab1403e0940017740912735ef9"</span>) {<span class="co"># using R.Friedman API key as default)</span></span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> CensusYears) {</span>
-<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(i <span class="sc">%%</span> <span class="dv">1</span> <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">|</span> i <span class="sc">&gt;</span> <span class="dv">2022</span> <span class="sc">|</span> i <span class="sc">&lt;</span> <span class="dv">2010</span>){ <span class="co"># confirms all CensusYears are within the valid range</span></span>
-<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">stop</span>(<span class="st">"Invalid range of years.  Range must be within 2010 to 2022.  2020 is skipped."</span>)}</span>
-<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>  CensusYears <span class="ot">&lt;-</span> CensusYears[CensusYears <span class="sc">!=</span> <span class="dv">2020</span>] <span class="co"># removes 2020 from CensusYears, if present</span></span>
-<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>  CensusYears <span class="ot">&lt;-</span> <span class="fu">unique</span>(CensusYears) <span class="co"># removes any duplicates, if present</span></span>
-<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>  QMultiParsed <span class="ot">=</span> <span class="cn">NULL</span> <span class="co"># need to start with placeholder here in order for bind_rows to work initally</span></span>
-<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> CensusYears) { <span class="co"># loop through all census years we want</span></span>
-<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a>    QMultiParsed <span class="ot">&lt;-</span> <span class="fu">QCensus</span>(i, numVars, catVars, geoLevel, geoSubset, APIKey) <span class="sc">|&gt;</span> <span class="co"># call QCensus() on the specific year and variables desired</span></span>
-<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">year =</span> i) <span class="sc">|&gt;</span> <span class="co"># add a year column </span></span>
-<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a>      <span class="fu">bind_rows</span>(QMultiParsed) <span class="co"># attach resulting tibble to existing tibble (building longer each time)</span></span>
-<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a>  QMultiParsed <span class="ot">&lt;-</span> <span class="fu">arrange</span>(QMultiParsed, year) <span class="co"># arranges results in lowest to highest year</span></span>
-<span id="cb36-24"><a href="#cb36-24" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb36-25"><a href="#cb36-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(QMultiParsed)</span>
-<span id="cb36-26"><a href="#cb36-26" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>QMultiCensus <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">CensusYears =</span> <span class="fu">c</span>(<span class="dv">2010</span><span class="sc">:</span><span class="dv">2011</span>), <span class="co"># </span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>), </span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"SEX"</span>), </span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">geoLevel =</span> <span class="st">"state"</span>, </span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">geoSubset =</span> <span class="st">"56"</span>, <span class="co"># setting Wyoming as default state</span></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>                         <span class="at">APIKey =</span> <span class="st">"5a644b1ecc301cab1403e0940017740912735ef9"</span>) {<span class="co"># using R.Friedman API key as default)</span></span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> CensusYears) {</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(i <span class="sc">%%</span> <span class="dv">1</span> <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">|</span> i <span class="sc">&gt;</span> <span class="dv">2022</span> <span class="sc">|</span> i <span class="sc">&lt;</span> <span class="dv">2010</span>){ <span class="co"># confirms all CensusYears are within the valid range</span></span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">stop</span>(<span class="st">"Invalid range of years.  Range must be within 2010 to 2022.  2020 is skipped."</span>)}</span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>  CensusYears <span class="ot">&lt;-</span> CensusYears[CensusYears <span class="sc">!=</span> <span class="dv">2020</span>] <span class="co"># removes 2020 from CensusYears, if present</span></span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>  CensusYears <span class="ot">&lt;-</span> <span class="fu">unique</span>(CensusYears) <span class="co"># removes any duplicates, if present</span></span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>  QMultiParsed <span class="ot">=</span> <span class="cn">NULL</span> <span class="co"># need to start with placeholder here in order for bind_rows to work initally</span></span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> CensusYears) { <span class="co"># loop through all census years we want</span></span>
+<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a>    QMultiParsed <span class="ot">&lt;-</span> <span class="fu">QCensus</span>(i, numVars, catVars, geoLevel, geoSubset, APIKey) <span class="sc">|&gt;</span> <span class="co"># call QCensus() on the specific year and variables desired</span></span>
+<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">year =</span> i) <span class="sc">|&gt;</span> <span class="co"># add a year column </span></span>
+<span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a>      <span class="fu">bind_rows</span>(QMultiParsed) <span class="co"># attach resulting tibble to existing tibble (building longer each time)</span></span>
+<span id="cb44-21"><a href="#cb44-21" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb44-22"><a href="#cb44-22" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb44-23"><a href="#cb44-23" aria-hidden="true" tabindex="-1"></a>  QMultiParsed <span class="ot">&lt;-</span> <span class="fu">arrange</span>(QMultiParsed, year) <span class="co"># arranges results in lowest to highest year</span></span>
+<span id="cb44-24"><a href="#cb44-24" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb44-25"><a href="#cb44-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(QMultiParsed)</span>
+<span id="cb44-26"><a href="#cb44-26" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Test <code>QMultiCensus()</code></p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(RunTest <span class="ot">&lt;-</span> <span class="fu">QMultiCensus</span>(<span class="at">CensusYears =</span> <span class="fu">c</span>(<span class="dv">2018</span><span class="sc">:</span><span class="dv">2021</span>))) <span class="co"># default variables.  testing exclusion of year 2020</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(RunTest <span class="ot">&lt;-</span> <span class="fu">QMultiCensus</span>(<span class="at">CensusYears =</span> <span class="fu">c</span>(<span class="dv">2018</span><span class="sc">:</span><span class="dv">2021</span>))) <span class="co"># default variables.  testing exclusion of year 2020</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-   0.14    0.02    1.27 </code></pre>
+   0.12    0.02    1.25 </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(RunTest) <span class="co"># check structure</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(RunTest) <span class="co"># check structure</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>census [17,568 × 5] (S3: census/tbl_df/tbl/data.frame)
  $ PWGTP: num [1:17568] 38 11 47 6 44 190 6 296 94 328 ...
@@ -601,19 +617,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  $ state: Factor w/ 1 level "56": 1 1 1 1 1 1 1 1 1 1 ...
  $ year : int [1:17568] 2018 2018 2018 2018 2018 2018 2018 2018 2018 2018 ...</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(RunTest<span class="sc">$</span>year) <span class="co"># verify years present in result</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(RunTest<span class="sc">$</span>year) <span class="co"># verify years present in result</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 2018 2019 2021</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">remove</span>(RunTest) <span class="co"># delete temp variable</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">remove</span>(RunTest) <span class="co"># delete temp variable</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(RunTest <span class="ot">&lt;-</span> <span class="fu">QMultiCensus</span>(<span class="at">CensusYears =</span> <span class="fu">c</span>(<span class="dv">2010</span><span class="sc">:</span><span class="dv">2022</span>), <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>), <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"SCHL"</span>, <span class="st">"SEX"</span>), <span class="at">geoLevel =</span> <span class="st">"state"</span>, <span class="at">geoSubset =</span> <span class="st">"02"</span> )) <span class="co"># Alaska data from 2010 to 2022</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(RunTest <span class="ot">&lt;-</span> <span class="fu">QMultiCensus</span>(<span class="at">CensusYears =</span> <span class="fu">c</span>(<span class="dv">2010</span><span class="sc">:</span><span class="dv">2022</span>), <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>), <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"SCHL"</span>, <span class="st">"SEX"</span>), <span class="at">geoLevel =</span> <span class="st">"state"</span>, <span class="at">geoSubset =</span> <span class="st">"02"</span> )) <span class="co"># Alaska data from 2010 to 2022</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-   0.70    0.02    6.80 </code></pre>
+   0.77    0.05    7.47 </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(RunTest) <span class="co"># check structure</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(RunTest) <span class="co"># check structure</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>census [81,376 × 7] (S3: census/tbl_df/tbl/data.frame)
  $ PWGTP: num [1:81376] 61 55 74 83 40 30 136 121 36 44 ...
@@ -626,46 +642,46 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  $ state: Factor w/ 2 levels "02","2": 2 2 2 2 2 2 2 2 2 2 ...
  $ year : int [1:81376] 2010 2010 2010 2010 2010 2010 2010 2010 2010 2010 ...</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(RunTest<span class="sc">$</span>year) <span class="co"># verify years present in result</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(RunTest<span class="sc">$</span>year) <span class="co"># verify years present in result</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2021 2022</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">remove</span>(RunTest) <span class="co"># delete temp variable</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="fu">remove</span>(RunTest) <span class="co"># delete temp variable</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>All tests of <code>QMultiCensus()</code> are successful.</p>
 </section>
 <section id="summary-for-census-data" class="level2">
-<h2 class="anchored" data-anchor-id="summary-for-census-data"><code>summary()</code> for Census Data</h2>
+<h2 class="anchored" data-anchor-id="summary-for-census-data">8. <code>summary()</code> for Census Data</h2>
 <p>The “census” class has been added to the tibble returned by <code>QCensus()</code> above. This also carries through to <code>QMultiCensus</code></p>
 <p>We will write our own function to direct how <code>summary()</code> is applied to “census” objects</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>summary.census <span class="ot">&lt;-</span> <span class="cf">function</span>(CensusTibble, </span>
-<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>                           <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>, <span class="st">"GASP"</span>, <span class="st">"GRPIP"</span>, <span class="st">"JWMNP"</span>, <span class="st">"JWAP"</span>), <span class="co"># by default includes applicable numeric variables.  excludes PWGTP, JDAP, and year</span></span>
-<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>                           <span class="do">## Note:  JWAP was deliberately included so that it could be analyzed in the Data Investigation section</span></span>
-<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>                           <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>, <span class="st">"region"</span>, <span class="st">"division"</span>, <span class="st">"state"</span>)){ <span class="co"># by default includes all possible categorical variables (also geoLevel if the tibble includes multiple SubSets)</span></span>
-<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>  meanVec <span class="ot">=</span> <span class="cn">NULL</span> <span class="co"># creating placeholders</span></span>
-<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>  sdVec <span class="ot">=</span> <span class="cn">NULL</span></span>
-<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a>  countVec <span class="ot">=</span> <span class="cn">NULL</span></span>
-<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">names</span>(CensusTibble)){ <span class="co"># loop through all the census tibble variable names</span></span>
-<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (i <span class="sc">%in%</span> numVars) { <span class="co"># if the name matches one of the specified numeric variables... </span></span>
-<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a>      CensusDropNA <span class="ot">&lt;-</span> CensusTibble <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(CensusTibble[[i]])) <span class="co"># create temporary CensusDropNA which removes the NA rows of the i variable </span></span>
-<span id="cb51-13"><a href="#cb51-13" aria-hidden="true" tabindex="-1"></a>      meanVec[[i]] <span class="ot">&lt;-</span> <span class="fu">sum</span>(CensusDropNA[[i]]<span class="sc">*</span>CensusDropNA[[<span class="st">"PWGTP"</span>]])<span class="sc">/</span><span class="fu">sum</span>(CensusDropNA[[<span class="st">"PWGTP"</span>]]) <span class="co"># build a vector of calculated weighted means, naming each element per the index</span></span>
-<span id="cb51-14"><a href="#cb51-14" aria-hidden="true" tabindex="-1"></a>      sdVec[[i]] <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(CensusDropNA[[i]]<span class="sc">^</span><span class="dv">2</span><span class="sc">*</span>CensusDropNA[[<span class="st">"PWGTP"</span>]])<span class="sc">/</span><span class="fu">sum</span>(CensusDropNA[[<span class="st">"PWGTP"</span>]])<span class="sc">-</span>meanVec[[i]]<span class="sc">^</span><span class="dv">2</span>) <span class="co"># build a vector of calculated weighted sd, naming each element per the index</span></span>
-<span id="cb51-15"><a href="#cb51-15" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb51-16"><a href="#cb51-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (i <span class="sc">%in%</span> catVars) { <span class="co"># if the name matches one of the specified categorical variables...</span></span>
-<span id="cb51-17"><a href="#cb51-17" aria-hidden="true" tabindex="-1"></a>      countVec[[i]] <span class="ot">&lt;-</span> <span class="fu">table</span>(CensusTibble[[i]]) <span class="co"># use table() to return un-weighted counts for the levels of the factors</span></span>
-<span id="cb51-18"><a href="#cb51-18" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb51-19"><a href="#cb51-19" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb51-20"><a href="#cb51-20" aria-hidden="true" tabindex="-1"></a>  CombinedSummary <span class="ot">=</span> <span class="fu">list</span>(<span class="st">"mean"</span> <span class="ot">=</span> meanVec, <span class="st">"sd"</span> <span class="ot">=</span> sdVec, <span class="st">"count"</span> <span class="ot">=</span> countVec) <span class="co"># combine the three summary named vectors into a list</span></span>
-<span id="cb51-21"><a href="#cb51-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(CombinedSummary)</span>
-<span id="cb51-22"><a href="#cb51-22" aria-hidden="true" tabindex="-1"></a>} </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>summary.census <span class="ot">&lt;-</span> <span class="cf">function</span>(CensusTibble, </span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>                           <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>, <span class="st">"GASP"</span>, <span class="st">"GRPIP"</span>, <span class="st">"JWMNP"</span>, <span class="st">"JWAP"</span>), <span class="co"># by default includes applicable numeric variables.  excludes PWGTP, JWDP, and year</span></span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>                           <span class="do">## Note:  JWAP was deliberately included so that it could be analyzed in the Data Investigation section</span></span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>                           <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>, <span class="st">"region"</span>, <span class="st">"division"</span>, <span class="st">"state"</span>)){ <span class="co"># by default includes all possible categorical variables (also geoLevel if the tibble includes multiple SubSets)</span></span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a>  meanVec <span class="ot">=</span> <span class="cn">NULL</span> <span class="co"># creating placeholders</span></span>
+<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a>  sdVec <span class="ot">=</span> <span class="cn">NULL</span></span>
+<span id="cb59-8"><a href="#cb59-8" aria-hidden="true" tabindex="-1"></a>  countVec <span class="ot">=</span> <span class="cn">NULL</span></span>
+<span id="cb59-9"><a href="#cb59-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb59-10"><a href="#cb59-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">names</span>(CensusTibble)){ <span class="co"># loop through all the census tibble variable names</span></span>
+<span id="cb59-11"><a href="#cb59-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (i <span class="sc">%in%</span> numVars) { <span class="co"># if the name matches one of the specified numeric variables... </span></span>
+<span id="cb59-12"><a href="#cb59-12" aria-hidden="true" tabindex="-1"></a>      CensusDropNA <span class="ot">&lt;-</span> CensusTibble <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(CensusTibble[[i]])) <span class="co"># create temporary CensusDropNA which removes the NA rows of the i variable </span></span>
+<span id="cb59-13"><a href="#cb59-13" aria-hidden="true" tabindex="-1"></a>      meanVec[[i]] <span class="ot">&lt;-</span> <span class="fu">sum</span>(CensusDropNA[[i]]<span class="sc">*</span>CensusDropNA[[<span class="st">"PWGTP"</span>]])<span class="sc">/</span><span class="fu">sum</span>(CensusDropNA[[<span class="st">"PWGTP"</span>]]) <span class="co"># build a vector of calculated weighted means, naming each element per the index</span></span>
+<span id="cb59-14"><a href="#cb59-14" aria-hidden="true" tabindex="-1"></a>      sdVec[[i]] <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(CensusDropNA[[i]]<span class="sc">^</span><span class="dv">2</span><span class="sc">*</span>CensusDropNA[[<span class="st">"PWGTP"</span>]])<span class="sc">/</span><span class="fu">sum</span>(CensusDropNA[[<span class="st">"PWGTP"</span>]])<span class="sc">-</span>meanVec[[i]]<span class="sc">^</span><span class="dv">2</span>) <span class="co"># build a vector of calculated weighted sd, naming each element per the index</span></span>
+<span id="cb59-15"><a href="#cb59-15" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb59-16"><a href="#cb59-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (i <span class="sc">%in%</span> catVars) { <span class="co"># if the name matches one of the specified categorical variables...</span></span>
+<span id="cb59-17"><a href="#cb59-17" aria-hidden="true" tabindex="-1"></a>      countVec[[i]] <span class="ot">&lt;-</span> <span class="fu">table</span>(CensusTibble[[i]]) <span class="co"># use table() to return un-weighted counts for the levels of the factors</span></span>
+<span id="cb59-18"><a href="#cb59-18" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb59-19"><a href="#cb59-19" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb59-20"><a href="#cb59-20" aria-hidden="true" tabindex="-1"></a>  CombinedSummary <span class="ot">=</span> <span class="fu">list</span>(<span class="st">"mean"</span> <span class="ot">=</span> meanVec, <span class="st">"sd"</span> <span class="ot">=</span> sdVec, <span class="st">"count"</span> <span class="ot">=</span> countVec) <span class="co"># combine the three summary named vectors into a list</span></span>
+<span id="cb59-21"><a href="#cb59-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(CombinedSummary)</span>
+<span id="cb59-22"><a href="#cb59-22" aria-hidden="true" tabindex="-1"></a>} </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Now some tests of <code>summary()</code></p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="co"># testing all variables across multiple years</span></span>
-<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">QMultiCensus</span>(<span class="at">CensusYears =</span> <span class="fu">c</span>(<span class="dv">2015</span><span class="sc">:</span><span class="dv">2017</span>), <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"PWGTP"</span>, <span class="st">"AGEP"</span>, <span class="st">"GASP"</span>, <span class="st">"GRPIP"</span>, <span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>, <span class="st">"JWMNP"</span>), <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>), <span class="at">geoLevel =</span> <span class="st">"state"</span>, <span class="at">geoSubset =</span> <span class="st">"02"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="co"># testing all variables across multiple years</span></span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">QMultiCensus</span>(<span class="at">CensusYears =</span> <span class="fu">c</span>(<span class="dv">2015</span><span class="sc">:</span><span class="dv">2017</span>), <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"PWGTP"</span>, <span class="st">"AGEP"</span>, <span class="st">"GASP"</span>, <span class="st">"GRPIP"</span>, <span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>, <span class="st">"JWMNP"</span>), <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>), <span class="at">geoLevel =</span> <span class="st">"state"</span>, <span class="at">geoSubset =</span> <span class="st">"02"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>$mean
 $mean$AGEP
@@ -736,8 +752,8 @@ $count$state
 </div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="co"># testing select variables AGEP and HHL for one year</span></span>
-<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">QCensus</span>(<span class="at">year =</span> <span class="dv">2018</span>, <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>, <span class="st">"JWDP"</span>, <span class="st">"JWAP"</span>, <span class="st">"GRPIP"</span>), <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>), <span class="at">geoLevel =</span> <span class="st">"division"</span>, <span class="at">geoSubset =</span> <span class="st">"4"</span> ), <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>), <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"HHL"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="co"># testing select variables AGEP and HHL for one year</span></span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">QCensus</span>(<span class="at">year =</span> <span class="dv">2018</span>, <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>, <span class="st">"JWDP"</span>, <span class="st">"JWAP"</span>, <span class="st">"GRPIP"</span>), <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>), <span class="at">geoLevel =</span> <span class="st">"division"</span>, <span class="at">geoSubset =</span> <span class="st">"4"</span> ), <span class="at">numVars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>), <span class="at">catVars =</span> <span class="fu">c</span>(<span class="st">"HHL"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>$mean
 $mean$AGEP
@@ -759,75 +775,34 @@ $count$HHL
 <p>All tests of <code>summary()</code> are successful.</p>
 </section>
 <section id="plot-for-census-data" class="level2">
-<h2 class="anchored" data-anchor-id="plot-for-census-data"><code>plot()</code> for Census Data</h2>
+<h2 class="anchored" data-anchor-id="plot-for-census-data">9. <code>plot()</code> for Census Data</h2>
 <p>We will write our own function to direct how <code>plot()</code> is applied to “census” objects</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>plot.census <span class="ot">&lt;-</span> <span class="cf">function</span>(CensusTibble, <span class="at">numVar =</span> <span class="st">"AGEP"</span> , <span class="at">catVar =</span> <span class="st">"SEX"</span>){  <span class="co"># setting these AGEP and SEX as the defaults</span></span>
-<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>  ValidNumVars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>, <span class="st">"GASP"</span>, <span class="st">"GRPIP"</span>, <span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>, <span class="st">"JWMNP"</span>) <span class="co"># list of all valid variables for numVar</span></span>
-<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>  ValidCatVars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>) <span class="co"># list of all valid variables for catVar</span></span>
-<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a> </span>
-<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">#checking if the requested variables are valid</span></span>
-<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>(numVar <span class="sc">%in%</span> ValidNumVars)) {<span class="fu">stop</span>(<span class="st">"Invalid numeric variable.  Valid options are AGEP, GASP, GRPIP, JWAP, JWDP, JWMNP"</span>)} </span>
-<span id="cb56-8"><a href="#cb56-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>(catVar <span class="sc">%in%</span> ValidCatVars)) {<span class="fu">stop</span>(<span class="st">"Invalid categorical variable.  Valid options are FER, HHL, SCH, SCHL, SEX"</span>)} </span>
-<span id="cb56-9"><a href="#cb56-9" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb56-10"><a href="#cb56-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">#checking if the requested variables exist in the tibble</span></span>
-<span id="cb56-11"><a href="#cb56-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>(numVar <span class="sc">%in%</span> <span class="fu">names</span>(CensusTibble))) {<span class="fu">stop</span>(<span class="fu">paste0</span>(numVar, <span class="st">" is not found in tibble"</span>))}</span>
-<span id="cb56-12"><a href="#cb56-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>(catVar <span class="sc">%in%</span> <span class="fu">names</span>(CensusTibble))) {<span class="fu">stop</span>(<span class="fu">paste0</span>(catVar, <span class="st">" is not found in tibble"</span>))}</span>
-<span id="cb56-13"><a href="#cb56-13" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb56-14"><a href="#cb56-14" aria-hidden="true" tabindex="-1"></a>  g <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(CensusTibble <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(<span class="fu">all_of</span>(numVar), <span class="fu">all_of</span>(catVar))) <span class="co"># build plot that drops rows that have NA for either variable (not sure why all_of() is required instead of get())</span></span>
-<span id="cb56-15"><a href="#cb56-15" aria-hidden="true" tabindex="-1"></a>  g <span class="sc">+</span> </span>
-<span id="cb56-16"><a href="#cb56-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_boxplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">get</span>(catVar), <span class="at">y =</span> <span class="fu">get</span>(numVar), <span class="at">weight =</span> PWGTP, <span class="at">fill =</span> <span class="fu">get</span>(catVar))) <span class="sc">+</span> <span class="co"># set up boxplot and apply weights</span></span>
-<span id="cb56-17"><a href="#cb56-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> catVar, <span class="at">y =</span> numVar, <span class="at">title =</span> <span class="fu">paste0</span>(numVar, <span class="st">" by "</span>, catVar)) <span class="sc">+</span> <span class="co"># set x label, y label, and title</span></span>
-<span id="cb56-18"><a href="#cb56-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_fill_discrete</span>(catVar) <span class="sc">+</span> <span class="co"># set legent label</span></span>
-<span id="cb56-19"><a href="#cb56-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>)) <span class="co"># center the title</span></span>
-<span id="cb56-20"><a href="#cb56-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb56-21"><a href="#cb56-21" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>plot.census <span class="ot">&lt;-</span> <span class="cf">function</span>(CensusTibble, <span class="at">numVar =</span> <span class="st">"AGEP"</span> , <span class="at">catVar =</span> <span class="st">"SEX"</span>){  <span class="co"># setting these AGEP and SEX as the defaults</span></span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>  ValidNumVars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>, <span class="st">"GASP"</span>, <span class="st">"GRPIP"</span>, <span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>, <span class="st">"JWMNP"</span>) <span class="co"># list of all valid variables for numVar</span></span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>  ValidCatVars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>) <span class="co"># list of all valid variables for catVar</span></span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">#checking if the requested variables are valid</span></span>
+<span id="cb64-7"><a href="#cb64-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>(numVar <span class="sc">%in%</span> ValidNumVars)) {<span class="fu">stop</span>(<span class="st">"Invalid numeric variable.  Valid options are AGEP, GASP, GRPIP, JWAP, JWDP, JWMNP"</span>)} </span>
+<span id="cb64-8"><a href="#cb64-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>(catVar <span class="sc">%in%</span> ValidCatVars)) {<span class="fu">stop</span>(<span class="st">"Invalid categorical variable.  Valid options are FER, HHL, SCH, SCHL, SEX"</span>)} </span>
+<span id="cb64-9"><a href="#cb64-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb64-10"><a href="#cb64-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">#checking if the requested variables exist in the tibble</span></span>
+<span id="cb64-11"><a href="#cb64-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>(numVar <span class="sc">%in%</span> <span class="fu">names</span>(CensusTibble))) {<span class="fu">stop</span>(<span class="fu">paste0</span>(numVar, <span class="st">" is not found in tibble"</span>))}</span>
+<span id="cb64-12"><a href="#cb64-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>(catVar <span class="sc">%in%</span> <span class="fu">names</span>(CensusTibble))) {<span class="fu">stop</span>(<span class="fu">paste0</span>(catVar, <span class="st">" is not found in tibble"</span>))}</span>
+<span id="cb64-13"><a href="#cb64-13" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb64-14"><a href="#cb64-14" aria-hidden="true" tabindex="-1"></a>  g <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(CensusTibble <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(<span class="fu">all_of</span>(numVar), <span class="fu">all_of</span>(catVar))) <span class="co"># build plot that drops rows that have NA for either variable (not sure why all_of() is required instead of get())</span></span>
+<span id="cb64-15"><a href="#cb64-15" aria-hidden="true" tabindex="-1"></a>  g <span class="sc">+</span> </span>
+<span id="cb64-16"><a href="#cb64-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_boxplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">get</span>(catVar), <span class="at">y =</span> <span class="fu">get</span>(numVar), <span class="at">weight =</span> PWGTP, <span class="at">fill =</span> <span class="fu">get</span>(catVar))) <span class="sc">+</span> <span class="co"># set up boxplot and apply weights</span></span>
+<span id="cb64-17"><a href="#cb64-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> catVar, <span class="at">y =</span> numVar, <span class="at">title =</span> <span class="fu">paste0</span>(numVar, <span class="st">" by "</span>, catVar)) <span class="sc">+</span> <span class="co"># set x label, y label, and title</span></span>
+<span id="cb64-18"><a href="#cb64-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_fill_discrete</span>(catVar) <span class="sc">+</span> <span class="co"># set legent label</span></span>
+<span id="cb64-19"><a href="#cb64-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>)) <span class="co"># center the title</span></span>
+<span id="cb64-20"><a href="#cb64-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-21"><a href="#cb64-21" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Now some tests of <code>plot()</code></p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">QCensus</span>(<span class="at">numVars =</span> <span class="st">"AGEP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>), <span class="at">numVar =</span> <span class="st">"AGEP"</span>, <span class="at">catVar =</span> <span class="st">"SCH"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="Project1_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">QMultiCensus</span>(<span class="at">CensusYears =</span> <span class="fu">c</span>(<span class="dv">2021</span><span class="sc">:</span><span class="dv">2022</span>), <span class="at">numVars =</span> <span class="st">"GASP"</span>, <span class="at">catVars =</span> <span class="st">"HHL"</span>, <span class="at">geoSubset =</span> <span class="st">"02"</span> ), <span class="at">numVar =</span> <span class="st">"GASP"</span>, <span class="at">catVar =</span> <span class="st">"HHL"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="Project1_files/figure-html/unnamed-chunk-25-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>All tests of <code>plot()</code> are successful.</p>
-</section>
-<section id="data-investigation" class="level2">
-<h2 class="anchored" data-anchor-id="data-investigation">Data Investigation</h2>
-<p>Let’s explore the relationship between Job Arrival Time (JWAP) and School Enrollment (SCH).</p>
-<p>To begin, we will use <code>QMultiCensus()</code> to grab census data from 2010 to 2022 (excluding 2020). We will consider both Rhode Island (a predominantly urban state) and South Dakota (a heavy farming state) to see if any contrast is apparent in the data.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>RIData <span class="ot">&lt;-</span> <span class="fu">QMultiCensus</span>(<span class="at">CensusYears =</span> <span class="dv">2010</span><span class="sc">:</span><span class="dv">2022</span>, <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>, <span class="at">geoLevel =</span> <span class="st">"state"</span>, <span class="at">geoSubset =</span> <span class="st">"44"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>SDData <span class="ot">&lt;-</span> <span class="fu">QMultiCensus</span>(<span class="at">CensusYears =</span> <span class="dv">2010</span><span class="sc">:</span><span class="dv">2022</span>, <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>, <span class="at">geoLevel =</span> <span class="st">"state"</span>, <span class="at">geoSubset =</span> <span class="st">"46"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>Next we use <code>plot()</code> on our census data to create box plots. Titles, labels, and subtitles will be amended to be more descriptive of the dataset and specific variable details.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(RIData, <span class="at">numVar =</span> <span class="st">"JWAP"</span>, <span class="at">catVar =</span> <span class="st">"SCH"</span>) <span class="sc">+</span></span>
-<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"School Enrollment"</span>, <span class="at">y =</span> <span class="st">"Job Arrival Time"</span>, <span class="at">title =</span> <span class="st">"Job Arrival Time by School Enrollment"</span>, <span class="at">subtitle =</span> <span class="st">"Rhode Island 2010-2022 (excluding 2020)"</span>) <span class="sc">+</span></span>
-<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_discrete</span>(<span class="at">name =</span> <span class="st">"School Enrollment"</span>, <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"1"</span> <span class="ot">=</span> <span class="st">"No w/in 3 mo"</span>, <span class="st">"2"</span> <span class="ot">=</span> <span class="st">"Yes, Public"</span>, <span class="st">"3"</span> <span class="ot">=</span> <span class="st">"Yes, Private"</span>)) <span class="sc">+</span></span>
-<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">name =</span> <span class="st">"School Enrollment"</span>) <span class="sc">+</span></span>
-<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Scale for fill is already present.
-Adding another scale for fill, which will replace the existing scale.</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">QCensus</span>(<span class="at">numVars =</span> <span class="st">"AGEP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>), <span class="at">numVar =</span> <span class="st">"AGEP"</span>, <span class="at">catVar =</span> <span class="st">"SCH"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -837,19 +812,52 @@ Adding another scale for fill, which will replace the existing scale.</code></pr
 </div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(SDData, <span class="at">numVar =</span> <span class="st">"JWAP"</span>, <span class="at">catVar =</span> <span class="st">"SCH"</span>) <span class="sc">+</span></span>
-<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"School Enrollment"</span>, <span class="at">y =</span> <span class="st">"Job Arrival Time"</span>, <span class="at">title =</span> <span class="st">"Job Arrival Time by School Enrollment"</span>, <span class="at">subtitle =</span> <span class="st">"South Dakota 2010-2022 (excluding 2020)"</span>) <span class="sc">+</span></span>
-<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_discrete</span>(<span class="at">name =</span> <span class="st">"School Enrollment"</span>, <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"1"</span> <span class="ot">=</span> <span class="st">"No w/in 3 mo"</span>, <span class="st">"2"</span> <span class="ot">=</span> <span class="st">"Yes, Public"</span>, <span class="st">"3"</span> <span class="ot">=</span> <span class="st">"Yes, Private"</span>)) <span class="sc">+</span></span>
-<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">name =</span> <span class="st">"School Enrollment"</span>) <span class="sc">+</span></span>
-<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Scale for fill is already present.
-Adding another scale for fill, which will replace the existing scale.</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">QMultiCensus</span>(<span class="at">CensusYears =</span> <span class="fu">c</span>(<span class="dv">2021</span><span class="sc">:</span><span class="dv">2022</span>), <span class="at">numVars =</span> <span class="st">"GASP"</span>, <span class="at">catVars =</span> <span class="st">"HHL"</span>, <span class="at">geoSubset =</span> <span class="st">"02"</span> ), <span class="at">numVar =</span> <span class="st">"GASP"</span>, <span class="at">catVar =</span> <span class="st">"HHL"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
 <p><img src="Project1_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>All tests of <code>plot()</code> are successful.</p>
+</section>
+<section id="data-investigation" class="level2">
+<h2 class="anchored" data-anchor-id="data-investigation">10. Data Investigation</h2>
+<p>Let’s explore the relationship between Job Arrival Time (JWAP) and School Enrollment (SCH).</p>
+<p>To begin, we will use <code>QMultiCensus()</code> to grab census data from 2010 to 2022 (excluding 2020). We will consider both Rhode Island (a predominantly urban state) and South Dakota (a heavy farming state) to see if any contrast is apparent in the data.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>RIData <span class="ot">&lt;-</span> <span class="fu">QMultiCensus</span>(<span class="at">CensusYears =</span> <span class="dv">2010</span><span class="sc">:</span><span class="dv">2022</span>, <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>, <span class="at">geoLevel =</span> <span class="st">"state"</span>, <span class="at">geoSubset =</span> <span class="st">"44"</span>) <span class="co"># 44 is Rhode Island</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>SDData <span class="ot">&lt;-</span> <span class="fu">QMultiCensus</span>(<span class="at">CensusYears =</span> <span class="dv">2010</span><span class="sc">:</span><span class="dv">2022</span>, <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>, <span class="at">geoLevel =</span> <span class="st">"state"</span>, <span class="at">geoSubset =</span> <span class="st">"46"</span>) <span class="co"># 46 is South Dakota</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Next we use <code>plot()</code> on our census data to create box plots. Titles, labels, and subtitles will be amended to be more descriptive of the dataset and specific variable details.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(RIData, <span class="at">numVar =</span> <span class="st">"JWAP"</span>, <span class="at">catVar =</span> <span class="st">"SCH"</span>) <span class="sc">+</span></span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"School Enrollment"</span>, <span class="at">y =</span> <span class="st">"Job Arrival Time"</span>, <span class="at">title =</span> <span class="st">"Job Arrival Time by School Enrollment"</span>, <span class="at">subtitle =</span> <span class="st">"Rhode Island 2010-2022 (excluding 2020)"</span>) <span class="sc">+</span></span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_discrete</span>(<span class="at">name =</span> <span class="st">"School Enrollment"</span>, <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"1"</span> <span class="ot">=</span> <span class="st">"No w/in 3 mo"</span>, <span class="st">"2"</span> <span class="ot">=</span> <span class="st">"Yes, Public"</span>, <span class="st">"3"</span> <span class="ot">=</span> <span class="st">"Yes, Private"</span>)) <span class="sc">+</span> <span class="co"># modifying factor level labels</span></span>
+<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">name =</span> <span class="st">"School Enrollment"</span>) <span class="sc">+</span></span>
+<span id="cb69-5"><a href="#cb69-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>)) <span class="co"># Centering subtitle</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Project1_files/figure-html/unnamed-chunk-32-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(SDData, <span class="at">numVar =</span> <span class="st">"JWAP"</span>, <span class="at">catVar =</span> <span class="st">"SCH"</span>) <span class="sc">+</span></span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"School Enrollment"</span>, <span class="at">y =</span> <span class="st">"Job Arrival Time"</span>, <span class="at">title =</span> <span class="st">"Job Arrival Time by School Enrollment"</span>, <span class="at">subtitle =</span> <span class="st">"South Dakota 2010-2022 (excluding 2020)"</span>) <span class="sc">+</span></span>
+<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_discrete</span>(<span class="at">name =</span> <span class="st">"School Enrollment"</span>, <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"1"</span> <span class="ot">=</span> <span class="st">"No w/in 3 mo"</span>, <span class="st">"2"</span> <span class="ot">=</span> <span class="st">"Yes, Public"</span>, <span class="st">"3"</span> <span class="ot">=</span> <span class="st">"Yes, Private"</span>)) <span class="sc">+</span></span>
+<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">name =</span> <span class="st">"School Enrollment"</span>) <span class="sc">+</span></span>
+<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Project1_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -862,51 +870,52 @@ Adding another scale for fill, which will replace the existing scale.</code></pr
 </ol>
 <p>Let’s reinforce these plot observations with calculated statistics. We will use <code>summary()</code> on our census data to calculate means and standard deviations.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For #1 above, grab the mean JWAP (both states combined) for students vs non-students</span></span>
-<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(CombinedMeanStudents <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(<span class="fu">bind_rows</span>(RIData, SDData), SCH <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"2"</span>,<span class="st">"3"</span>)), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>mean<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For #1 above, grab the mean JWAP (both states combined) for students vs non-students</span></span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(CombinedMeanStudents <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(<span class="fu">bind_rows</span>(RIData, SDData), SCH <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"2"</span>,<span class="st">"3"</span>)), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>mean<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 640.971</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(CombinedMeanNonStudents <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(<span class="fu">bind_rows</span>(RIData, SDData), SCH <span class="sc">==</span> <span class="st">"1"</span>), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>mean<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(CombinedMeanNonStudents <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(<span class="fu">bind_rows</span>(RIData, SDData), SCH <span class="sc">==</span> <span class="st">"1"</span>), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>mean<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 516.221</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For #2 above, grab the sd JWAP (both states combined) for students vs non-students</span></span>
-<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(CombinedSDStudents <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(<span class="fu">bind_rows</span>(RIData, SDData), SCH <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"2"</span>,<span class="st">"3"</span>)), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>sd<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For #2 above, grab the sd JWAP (both states combined) for students vs non-students</span></span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(CombinedSDStudents <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(<span class="fu">bind_rows</span>(RIData, SDData), SCH <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"2"</span>,<span class="st">"3"</span>)), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>sd<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 256.7436</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(CombinedSDNonStudents <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(<span class="fu">bind_rows</span>(RIData, SDData), SCH <span class="sc">==</span> <span class="st">"1"</span>), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>sd<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(CombinedSDNonStudents <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(<span class="fu">bind_rows</span>(RIData, SDData), SCH <span class="sc">==</span> <span class="st">"1"</span>), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>sd<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 196.2084</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For #3 above, grab the mean and sd JWAP of both RI and SD for non-students</span></span>
-<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(RINonStudentsMean <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(RIData, SCH <span class="sc">==</span> <span class="dv">1</span>), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>mean<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb79"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For #3 above, grab the mean and sd JWAP of both RI and SD for non-students</span></span>
+<span id="cb79-2"><a href="#cb79-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(RINonStudentsMean <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(RIData, SCH <span class="sc">==</span> <span class="dv">1</span>), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>mean<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 527.0277</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(SDNonStudentsMean <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(SDData, SCH <span class="sc">==</span> <span class="dv">1</span>), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>mean<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb81"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(SDNonStudentsMean <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(SDData, SCH <span class="sc">==</span> <span class="dv">1</span>), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>mean<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 503.3677</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(RINonStudentsSD <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(RIData, SCH <span class="sc">==</span> <span class="dv">1</span>), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>sd<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(RINonStudentsSD <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(RIData, SCH <span class="sc">==</span> <span class="dv">1</span>), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>sd<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 201.5765</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb79"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(SDNonStudentsSD <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(SDData, SCH <span class="sc">==</span> <span class="dv">1</span>), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>sd<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(SDNonStudentsSD <span class="ot">&lt;-</span> <span class="fu">summary</span>(<span class="fu">filter</span>(SDData, SCH <span class="sc">==</span> <span class="dv">1</span>), <span class="at">numVars =</span> <span class="st">"JWAP"</span>, <span class="at">catVars =</span> <span class="st">"SCH"</span>)<span class="sc">$</span>sd<span class="sc">$</span>JWAP)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 188.8223</code></pre>
 </div>
 </div>
 <p>Expanding on the prior observations with statistical results:</p>
+<p>The following observations draw on combined PUMS data for Rhode Island and South Dakota across survey years 2010 through 2022 (excluding 2020, which the Census Bureau did not release due to the pandemic). Observations 1 and 2 pool both states; observation 3 contrasts them.</p>
 <ol type="1">
-<li><p>Job arrival time is later in the day for current students vs non-students. For current students, the mean job arrival time is 10:41 am (641 minutes after midnight). For non-students, the mean job arrival time is more than two hours earlier at 8:36 am (516 minutes after midnight). This may be due to many students employed in after-school jobs, which would start later in the day.</p></li>
-<li><p>Job arrival time has more variation for current students vs non-students. For current students, the standard deviation of job arrival time is 257 minutes. For non-students, the standard deviation of job arrival time is 196 minutes. This may be due to students working irregular part-time hours to accommodate their school schedules.</p></li>
-<li><p>Job arrival time among non-students is earlier in the day for SD compared to RI. For RI, the mean job arrival time among non-students is 8:47 am (527 minutes after midnight) with a standard deviation of 202 minutes. For SD, the mean job arrival time among non-students is 8:23 am (503 minutes after midnight) with a standard deviation of 189 minutes. This difference may be due to a difference in job types between SD and RI. SD is a heavy farming state and would have more agricultural skewed jobs that start before sunrise. In contrast, RI is a very urban state and may skew more towards office and service jobs that don’t need to start as early in the day.</p></li>
+<li><p>Current students arrive at work later in the day than non-students. The weighted mean arrival time is 10:41 a.m. (641 minutes after midnight) for current students, compared to 8:36 a.m. (516 minutes) for non-students — a difference of more than two hours. A plausible explanation is that many students work after-school jobs, which start later in the day.</p></li>
+<li><p>Arrival time is more variable for current students than non-students. The weighted standard deviation is 257 minutes for students versus 196 minutes for non-students. This may reflect students working irregular part-time hours scheduled around their classes, producing a wider spread of start times.</p></li>
+<li><p>Among non-students, arrival time is earlier in South Dakota than in Rhode Island. The weighted mean is 8:23 a.m. (503 minutes) in South Dakota versus 8:47 a.m. (527 minutes) in Rhode Island, with standard deviations of 189 and 202 minutes respectively. One possible explanation is a difference in the dominant job types between the two states: South Dakota is largely rural/agricultural and farm work tends to start early. Rhode Island is more urban and may skew toward office and service jobs with later start times.</p></li>
 </ol>
 <p>Evaluation of statistical significance of the above observed differences is recommended, though beyond the scope of this analysis.</p>
 
