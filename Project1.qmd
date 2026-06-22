@@ -306,7 +306,8 @@ system.time(print(QCensus(year = 2021, numVars = c("JWAP", "JWDP"), catVars = c(
 ```{r}
 system.time(print(QCensus(year = 2018, numVars = c("AGEP", "JWDP", "JWAP", "JWMNP", "GRPIP"), catVars = c("FER"), geoLevel = "division", geoSubset = "4" ))) # trying a division and some other variables
 ```
-Note:  Departure time for work "JWDP" and work arrival time "JWAP" calculations are approximately validated by work travel time "JWMNP". Calculation is not always exact since JWDP and JWAP assume the middle of the time range reported.
+
+Note: Departure time for work "JWDP" and work arrival time "JWAP" calculations are approximately validated by work travel time "JWMNP". Calculation is not always exact since JWDP and JWAP assume the middle of the time range reported.
 
 ```{r}
 # system.time(BigTest <- QCensus(year = 2015, numVars = c("PWGTP", "AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP"), catVars = c("FER", "HHL", "SCH", "SCHL", "SEX"), geoLevel = "state", geoSubset = "all"))
@@ -373,7 +374,7 @@ All tests of `QMultiCensus()` are successful.
 
 ## `summary()` for Census Data
 
-The "census" class has been added to the tibble returned by `QCensus()` above.  This also carries through to `QMultiCensus`
+The "census" class has been added to the tibble returned by `QCensus()` above. This also carries through to `QMultiCensus`
 
 We will write our own function to direct how `summary()` is applied to "census" objects
 
@@ -389,8 +390,9 @@ summary.census <- function(CensusTibble,
   
   for (i in names(CensusTibble)){ # loop through all the census tibble variable names
     if (i %in% numVars) { # if the name matches one of the specified numeric variables... 
-      meanVec[[i]] <- sum(CensusTibble[[i]]*CensusTibble[["PWGTP"]])/sum(CensusTibble[["PWGTP"]]) # build a vector of calculated weighted means, naming each element per the index
-      sdVec[[i]] <- sqrt(sum(CensusTibble[[i]]^2*CensusTibble[["PWGTP"]])/sum(CensusTibble[["PWGTP"]])-meanVec[[i]]^2) # build a vector of calculated weighted sd, naming each element per the index
+      CensusDropNA <- CensusTibble |> filter(!is.na(CensusTibble[[i]])) # create temporary CensusDropNA which removes the NA rows of the i variable 
+      meanVec[[i]] <- sum(CensusDropNA[[i]]*CensusDropNA[["PWGTP"]])/sum(CensusDropNA[["PWGTP"]]) # build a vector of calculated weighted means, naming each element per the index
+      sdVec[[i]] <- sqrt(sum(CensusDropNA[[i]]^2*CensusDropNA[["PWGTP"]])/sum(CensusDropNA[["PWGTP"]])-meanVec[[i]]^2) # build a vector of calculated weighted sd, naming each element per the index
     }
     if (i %in% catVars) { # if the name matches one of the specified categorical variables...
       countVec[[i]] <- table(CensusTibble[[i]]) # use table() to return un-weighted counts for the levels of the factors
@@ -412,6 +414,7 @@ summary(QMultiCensus(CensusYears = c(2015:2017), numVars = c("PWGTP", "AGEP", "G
 # testing select variables AGEP and HHL for one year
 summary(QCensus(year = 2018, numVars = c("AGEP", "JWDP", "JWAP", "GRPIP"), catVars = c("FER", "HHL"), geoLevel = "division", geoSubset = "4" ), numVars = c("AGEP"), catVars = c("HHL"))
 ```
+
 All tests of `summary()` are successful.
 
 ## `plot()` for Census Data
@@ -458,7 +461,7 @@ All tests of `plot()` are successful.
 
 Let's explore the relationship between Job Arrival Time (JWAP) and School Enrollment (SCH).
 
-To begin, we will use `QMultiCensus()` to grab census data from 2010 to 2022 (excluding 2020).  We will consider both Rhode Island (a predominantly urban state) and South Dakota (a heavy farming state) to see if any contrast is apparent in the data.
+To begin, we will use `QMultiCensus()` to grab census data from 2010 to 2022 (excluding 2020). We will consider both Rhode Island (a predominantly urban state) and South Dakota (a heavy farming state) to see if any contrast is apparent in the data.
 
 ```{r}
 RIData <- QMultiCensus(CensusYears = 2010:2022, numVars = "JWAP", catVars = "SCH", geoLevel = "state", geoSubset = "44")
@@ -468,7 +471,7 @@ RIData <- QMultiCensus(CensusYears = 2010:2022, numVars = "JWAP", catVars = "SCH
 SDData <- QMultiCensus(CensusYears = 2010:2022, numVars = "JWAP", catVars = "SCH", geoLevel = "state", geoSubset = "46")
 ```
 
-Next we use `plot()` on our census data to create box plots.  Titles, labels, and subtitles will be amended to be more descriptive of the dataset and specific variable details.
+Next we use `plot()` on our census data to create box plots. Titles, labels, and subtitles will be amended to be more descriptive of the dataset and specific variable details.
 
 ```{r}
 plot(RIData, numVar = "JWAP", catVar = "SCH") +
@@ -485,17 +488,43 @@ plot(SDData, numVar = "JWAP", catVar = "SCH") +
   scale_x_discrete(name = "School Enrollment") +
   theme(plot.subtitle = element_text(hjust = 0.5))
 ```
+
 Review of the RI and SD boxplots provide the following observations:
 
-- Job arrival time is later in the day for people who are currently enrolled in school
+1.  Job arrival time is later in the day for current students vs non-students
 
-- The standard deviation of job arrival times is greater for current students vs non-students
+2.  Job arrival time has more variation for current students vs non-students
 
-- Job arrival time (among non-students) is earlier in the day for SD compared to RI
+3.  Job arrival time among non-students is earlier in the day for SD compared to RI
 
 Let's reinforce these plot observations with calculated statistics. We will use `summary()` on our census data to calculate means and standard deviations.
 
 ```{r}
-summary(RIData, numVars = "JWAP", catVars = "SCH")
+# For #1 above, grab the mean JWAP (both states combined) for students vs non-students
+print(CombinedMeanStudents <- summary(filter(bind_rows(RIData, SDData), SCH %in% c("2","3")), numVars = "JWAP", catVars = "SCH")$mean$JWAP)
+print(CombinedMeanNonStudents <- summary(filter(bind_rows(RIData, SDData), SCH == "1"), numVars = "JWAP", catVars = "SCH")$mean$JWAP)
 ```
-NEED TO FIX JWAP NA RESULTS
+
+```{r}
+# For #2 above, grab the sd JWAP (both states combined) for students vs non-students
+print(CombinedSDStudents <- summary(filter(bind_rows(RIData, SDData), SCH %in% c("2","3")), numVars = "JWAP", catVars = "SCH")$sd$JWAP)
+print(CombinedSDNonStudents <- summary(filter(bind_rows(RIData, SDData), SCH == "1"), numVars = "JWAP", catVars = "SCH")$sd$JWAP)
+```
+
+```{r}
+# For #3 above, grab the mean and sd JWAP of both RI and SD for non-students
+print(RINonStudentsMean <- summary(filter(RIData, SCH == 1), numVars = "JWAP", catVars = "SCH")$mean$JWAP)
+print(SDNonStudentsMean <- summary(filter(SDData, SCH == 1), numVars = "JWAP", catVars = "SCH")$mean$JWAP)
+print(RINonStudentsSD <- summary(filter(RIData, SCH == 1), numVars = "JWAP", catVars = "SCH")$sd$JWAP)
+print(SDNonStudentsSD <- summary(filter(SDData, SCH == 1), numVars = "JWAP", catVars = "SCH")$sd$JWAP)
+```
+
+Expanding on the prior observations with statistical results:
+
+1.  Job arrival time is later in the day for current students vs non-students.  For current students, the mean job arrival time is 10:41 am (641 minutes after midnight). For non-students, the mean job arrival time is more than two hours earlier at 8:36 am (516 minutes after midnight).  This may be due to many students employed in after-school jobs, which would start later in the day.
+
+2.  Job arrival time has more variation for current students vs non-students.  For current students, the standard deviation of job arrival time is 257 minutes.  For non-students, the standard deviation of job arrival time is 196 minutes.  This may be due to students working irregular part-time hours to accommodate their school schedules.
+
+3.  Job arrival time among non-students is earlier in the day for SD compared to RI.  For RI, the mean job arrival time among non-students is 8:47 am (527 minutes after midnight) with a standard deviation of 202 minutes.  For SD, the mean job arrival time among non-students is 8:23 am (503 minutes after midnight) with a standard deviation of 189 minutes.  This difference may be due to a difference in job types between SD and RI.  SD is a heavy farming state and would have more agricultural skewed jobs that start before sunrise.  In contrast, RI is a very urban state and may skew more towards office and service jobs that don't need to start as early in the day.
+
+Evaluation of statistical significance of the above observed differences is recommended, though beyond the scope of this analysis.
